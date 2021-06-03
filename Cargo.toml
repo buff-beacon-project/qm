@@ -1,0 +1,24 @@
+[package]
+name = "qm"
+version = "0.1.0"
+authors = ["Jasper <jasper.palfree@colorado.edu>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = { version = "0.13", features = ["serde"] }
+ndarray-linalg = "0.12"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dimensioned = "0.7"
+
+[dev-dependencies]
+criterion = "0.2"
+float-cmp = "0.5"
+
+# Benchmarks
+[[bench]]
+name = "example"
+harness = false
