@@ -15,7 +15,7 @@ pub fn fib(n : u64) -> u64 {
  fib_num as u64
 }
 
-/// Get the "n"th fibonacci number using integers only.
+/// Get the "n"th fibonacci number using complex numbers. For example, n = Complex{re:2.1, im:-3.3}.
 pub fn fibc(n: Complex<f64>) -> Complex<f64>{
  
  let phi: f64 = (1.0 + 5_f64.sqrt())/2.0;
@@ -30,9 +30,10 @@ mod tests {
 
   #[test]
   fn test_fibc() {
-    let actual = fibc(Complex{re:1.1, im:-4.0});
-    let expected = Complex{re:-23399.5652802858096777, im: 29643.22961747001006496};
+    let actual = fibc(Complex{re:2.1, im:-3.3});
+    let expected = Complex{re:842.107900737978028312629, im: -2448.9411071123121308522611};
     assert!((actual - expected).norm_sqr() <= 1e-6);
+    println!("{}",actual)
   }
 }
 
