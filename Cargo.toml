@@ -21,5 +21,5 @@ float-cmp = "0.5"
 
 # Benchmarks
 [[bench]]
-name = "example"
+name = "test_bench"
 harness = false
