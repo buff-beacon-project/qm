@@ -1,5 +1,6 @@
 use std::f64::consts::PI;
-// use std::cmp;
+use std::vec::*;
+use std::cmp;
 use ndarray::prelude::*;
 use ndarray_linalg::*;
 
@@ -66,14 +67,46 @@ pub fn find_dim(rho_sqrd: MatrixC64)-> f64{
   shape.1 as f64
 }
 
+pub fn fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
+
+  let sqrt_rho = rho.ssqrt(UPLO::Lower).unwrap();
+  let product = sqrt_rho.dot(&sigma).dot(&sqrt_rho);
+  let sqrt_product = product.ssqrt(UPLO::Lower).unwrap();
+  (sqrt_product.trace().unwrap()).re
+}
+
+pub fn find_concurrence(rho: MatrixC64) -> f64{
+
+  let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
+                        [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
+                        [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
+                        [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
+  println!("rho is {}", rho);
+  let sqrt_rho_lower = rho.ssqrt(UPLO::Upper);
+  println!("sqrt_root_lower = \n {:?}\n ",sqrt_rho_lower);
+  let sqrt_rho = sqrt_rho_lower.unwrap();
+
+  let rho_star = rho.mapv(|rho| rho.conj());
+  let rho_tilde = pauli_y.dot(&rho_star).dot(&pauli_y);
+
+  let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
+  
+  let sqrt_product = product.ssqrt(UPLO::Lower).unwrap();
+
+  let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
+  
+  println!("eigs = {}",eigvals);
+  0_f64.max(eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
+}
+
 // pub fn find_sqr_root_of_matrix(rho: MatrixC64) -> MatrixC64 {
 
 // //Hermitian matrices are always diagonalizable, so we can express rho = S*D*(S^-1),
 // //so the sqrt(rho) = S*(D^0.5)*(S^-1).
 
-//   let (eigs, vecs) = rho.eigh().unwrap();
-//   let (eig_0,eig_1) = (eigs[0].re, eigs[1].re);
-//   let (vecs_0, vecs_1, vecs_2, vecs_3) = (vecs[[0 , 0]].re , vecs[[0 , 1]].re , vecs[[1 , 0]].re , vecs[[1 , 1]].re);
+//   let (eigs, vecs) = rho.eigh(UPLO::Lower).unwrap();
+//   let (eig_0,eig_1) = (eigs[0], eigs[1]);
+//   let (vecs_0, vecs_1, vecs_2, vecs_3) = (vecs[[0 , 0]] , vecs[[0 , 1]] , vecs[[1 , 0]] , vecs[[1 , 1]]);
 
 //   let mat_s = array![ [ vecs_0 , vecs_1 ], 
 //                       [ vecs_2 , vecs_3 ] ];
@@ -83,63 +116,10 @@ pub fn find_dim(rho_sqrd: MatrixC64)-> f64{
 
 //   let mat_s_inv = mat_s.inv().unwrap();
 
-// //ssqrt only applies to real, Hermitian matrices. rho may have complex off-diagonal terms.
-
 //   let sqrt_mat_d = mat_d.ssqrt(UPLO::Lower).unwrap();
 //   let sqrt_product = mat_s.dot(&sqrt_mat_d).dot(&mat_s_inv);
-
+//   sqrt_product
 // }
-
-pub fn fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
-
-  let sqrt_rho = rho.ssqrt(UPLO::Lower).unwrap();
-  let product = sqrt_rho.dot(&sigma).dot(&sqrt_rho);
-  let sqrt_product = product.ssqrt(UPLO::Lower).unwrap();
-  (sqrt_product.trace().unwrap()).re
-
-  //Test code for debugging
-
-  // let s_d_s_inv = mat_s.dot(&mat_d).dot(&mat_s_inv);
-  // println!("vecs = {} \n, mat_s = {} \n",vecs,mat_s);
-  // println!("mat_d = {} \n",mat_d);
-  // println!("sqrt_mat_d = {} \n", sqrt_mat_d);
-  // println!("s_d_s_inv = {} \n, product = {} \n",s_d_s_inv, product);
-  // println!("Square root of product squared = {}",sqrt_product.dot(&sqrt_product));
-}
-
-// fn sort<A, T>(mut array: A) -> A
-// where
-//     A: AsMut<[T]>,
-//     T: Ord,
-// {
-//     let slice = array.as_mut();
-//     slice.sort();
-//     array
-// }
-
-// pub fn find_concurrence(rho: MatrixC64) -> f64{
-
-//   let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
-//                         [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
-//                         [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
-//                         [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
-
-//   let sqrt_rho = rho.ssqrt(UPLO::Lower).unwrap();
-//   let rho_star = rho.mapv(|rho| rho.conj());
-//   let rho_tilde = pauli_y.dot(&rho_star).dot(&pauli_y);
-
-//   let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
-//   let sqrt_product = product.ssqrt(UPLO::Lower).unwrap();
-//   let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
-  
-//   // let mut sorted_eigvals = sort(eigvals);
-//   println!("eigs = {}",eigvals);
-//   // cmp::max(0., eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
-
-//   1.1
-// }
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]

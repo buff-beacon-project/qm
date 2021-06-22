@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use ndarray_linalg::c64;
 use qm::*;
 use ndarray::prelude::*;
@@ -28,6 +29,7 @@ fn main() {
                                      [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
                                      [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ] ,
                                      [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] ];
+
 ////////////////////////////////////////////////////////////////////////
   //Fibonacci function tests
 
@@ -42,8 +44,7 @@ fn main() {
   let rho_bell_psi_plus = create_dens_matrix(bell_psi_plus_coef);
   let rho_bell_psi_minus = create_dens_matrix(bell_psi_minus_coef);
 
-  let rho_bell_psi_minus_2 = rho_bell_psi_minus.clone();
-  let rho_bell_psi_minus_3 = rho_bell_psi_minus_2.clone();
+
 
   // println!("dens matrix for phi_+ = \n {} \n", rho_bell_phi_plus);
   // println!("dens matrix for phi_- = \n {} \n", rho_bell_phi_minus);
@@ -53,14 +54,14 @@ fn main() {
 //////////////////////////////////////////////////////////////////////////  
   //Purity test
   
-  println!("Dens matrix for a maximally mixed state {}: \n",rho_max_mixed_1_qbit);
-  let rho_a_max_mixed_1_qbit = rho_max_mixed_1_qbit.clone();
-  let rho_sqrd_1_qbit = find_dens_matrix_sqrd(rho_a_max_mixed_1_qbit);
-  let rho_a_sqrd_1_qbit = rho_sqrd_1_qbit.clone();
-  let rho_b_sqrd_1_qbit = rho_a_sqrd_1_qbit.clone();
-  println!("Dens matrix squared is \n {} \n",rho_sqrd_1_qbit);
-  println!("The purity is {} \n", find_purity(rho_a_sqrd_1_qbit));
-  println!("The purity ranges from {} to {} \n", 1./find_dim(rho_b_sqrd_1_qbit), 1);
+  // println!("Dens matrix for a maximally mixed state {}: \n",rho_max_mixed_1_qbit);
+  // let rho_a_max_mixed_1_qbit = rho_max_mixed_1_qbit.clone();
+  // let rho_sqrd_1_qbit = find_dens_matrix_sqrd(rho_a_max_mixed_1_qbit);
+  // let rho_a_sqrd_1_qbit = rho_sqrd_1_qbit.clone();
+  // let rho_b_sqrd_1_qbit = rho_a_sqrd_1_qbit.clone();
+  // println!("Dens matrix squared is \n {} \n",rho_sqrd_1_qbit);
+  // println!("The purity is {} \n", find_purity(rho_a_sqrd_1_qbit));
+  // println!("The purity ranges from {} to {} \n", 1./find_dim(rho_b_sqrd_1_qbit), 1);
 
   // println!("Dens matrix for a pure state {}: \n",rho_bell_phi_plus);
   // let rho_bell_2 = rho_bell_phi_plus.clone();
@@ -69,24 +70,59 @@ fn main() {
   // let rho_bell_sqrd_3 = rho_bell_sqrd_2.clone();
   // println!("Dens matrix squared is \n {} \n",rho_bell_sqrd);
   // println!("The purity is {} \n", find_purity(rho_bell_sqrd_2));
-  // println!("The purity ranges from {} to {}", 1./find_dim(rho_bell_sqrd_3), 1)  
+  // println!("The purity ranges from {} to {}", 1./find_dim(rho_bell_sqrd_3), 1);
 
 //////////////////////////////////////////////////////////////////////////  
   //Fidelity test
 
-  let rho_max_a_2_qbit = rho_max_mixed_2_qbit.clone();
-  let rho_max_b_2_qbit = rho_max_a_2_qbit.clone();
-  let rho_max_c_2_qbit = rho_max_b_2_qbit.clone();
-  let rho_max_d_2_qbit = rho_max_c_2_qbit.clone();
-  let rho_max_e_2_qbit = rho_max_d_2_qbit.clone();
+  // let rho_max_a_2_qbit = rho_max_mixed_2_qbit.clone();
+  // let rho_max_b_2_qbit = rho_max_a_2_qbit.clone();
+  // let rho_max_c_2_qbit = rho_max_b_2_qbit.clone();
+  // let rho_max_d_2_qbit = rho_max_c_2_qbit.clone();
+  // let rho_max_e_2_qbit = rho_max_d_2_qbit.clone();
 
+  // let rho_2_bell_psi_minus = rho_bell_psi_minus.clone();
+  // let rho_3_bell_psi_minus = rho_2_bell_psi_minus.clone();
+  // let rho_4_bell_psi_minus = rho_3_bell_psi_minus.clone();
 
-  println!("The fidelity for a maximally mixed state with itself is {} \n",fidelity(rho_max_mixed_2_qbit,rho_max_a_2_qbit));
-  println!("The fidelity for a maximally mixed state with phi_+ is {} \n",fidelity(rho_max_b_2_qbit,rho_bell_phi_plus));
-  println!("The fidelity for a maximally mixed state with phi_- is {} \n",fidelity(rho_max_c_2_qbit,rho_bell_phi_minus));  
-  println!("The fidelity for a maximally mixed state with psi_+  is {} \n",fidelity(rho_max_d_2_qbit,rho_bell_psi_plus));  
-  println!("The fidelity for a maximally mixed state with psi_-  is {} \n",fidelity(rho_max_e_2_qbit,rho_bell_psi_minus));  
+  // let rho_2_bell_psi_plus = rho_bell_psi_plus.clone();
+  // let rho_3_bell_psi_plus = rho_2_bell_psi_plus.clone();
 
+  // println!("The fidelity for a maximally mixed state with itself is {} \n",fidelity(rho_max_mixed_2_qbit,rho_max_a_2_qbit));
+  // println!("The fidelity for a maximally mixed state with phi_+ is {} \n",fidelity(rho_max_b_2_qbit,rho_bell_phi_plus));
+  // println!("The fidelity for a maximally mixed state with phi_- is {} \n",fidelity(rho_max_c_2_qbit,rho_bell_phi_minus));  
+  // println!("The fidelity for a maximally mixed state with psi_+  is {} \n",fidelity(rho_max_d_2_qbit,rho_bell_psi_plus));  
+  // println!("The fidelity for a maximally mixed state with psi_-  is {} \n",fidelity(rho_max_e_2_qbit,rho_bell_psi_minus));  
 
-  println!("The fidelity for psi_- with psi_-  is {} \n",fidelity(rho_bell_psi_minus_2,rho_bell_psi_minus_3)); 
+  // println!("The fidelity for psi_- with psi_-  is {} \n",fidelity(rho_2_bell_psi_minus,rho_3_bell_psi_minus));
+  // println!("The fidelity for psi_+ with psi_-  is {} \n",fidelity(rho_2_bell_psi_plus,rho_4_bell_psi_minus));   
+
+//////////////////////////////////////////////////////////////////////////  
+  //Concurrence Tests
+
+  // let coef_test = array![c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), 0.0), c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), 0.0)];
+  // let test_mat = create_dens_matrix(coef_test);
+  // println!("test_mat = {}", test_mat);
+  
+  println!("Concurrence of phi_+ is {}", find_concurrence(rho_bell_phi_plus));
+  println!("Concurrence of phi_- is {}", find_concurrence(rho_bell_phi_minus));
+  println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
+  println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
+
+  println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
+
+  let theta = PI/3.;
+  // let psi_part_entangled = array![c64::new(theta.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(theta.sin(), 0.0)];
+  // let rho_part_entangled = create_dens_matrix(psi_part_entangled);  
+
+  let psi_00 = array![c64::new(theta.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0)];
+  let psi_11 = array![c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(theta.sin(), 0.0)];  
+
+  let rho_00 = create_dens_matrix(psi_00);  
+  let rho_11 = create_dens_matrix(psi_11);  
+  let rho_mix = rho_00 + rho_11;
+
+  // println!("{}",rho_part_entangled);
+  // println!("Concurrence of partially entangled state is {}", find_concurrence(rho_part_entangled));  
+  println!("Concurrence of rho_mix is {}", find_concurrence(rho_mix));  
 }
