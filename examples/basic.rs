@@ -1,34 +1,33 @@
-use std::f64::consts::PI;
-use ndarray_linalg::c64;
+use ndarray_linalg::*;
+use std::f32::consts::PI;
 use qm::*;
 use ndarray::prelude::*;
-// use ndarray_linalg::*;
 
 fn main() {
 
 ////////////////////////////////////////////////////////////////////////
   // Global variables (Bell States, maximally mixed state)
 
-  let norm_const = 1./2_f64.sqrt();
-  let bell_phi_plus_coef = array![c64::new(norm_const , 0.0) , c64::new(0.0        , 0.0) , 
-                                  c64::new(0.0        , 0.0) , c64::new(norm_const , 0.0) ];
+  // let norm_const = 1./2_f64.sqrt();
+  // let bell_phi_plus_coef = array![c64::new(norm_const , 0.0) , c64::new(0.0        , 0.0) , 
+  //                                 c64::new(0.0        , 0.0) , c64::new(norm_const , 0.0) ];
 
-  let bell_phi_minus_coef = array![c64::new(norm_const , 0.0) , c64::new(0.0         , 0.0) , 
-                                   c64::new(0.0        , 0.0) , c64::new(-norm_const , 0.0) ];
+  // let bell_phi_minus_coef = array![c64::new(norm_const , 0.0) , c64::new(0.0         , 0.0) , 
+  //                                  c64::new(0.0        , 0.0) , c64::new(-norm_const , 0.0) ];
 
-  let bell_psi_plus_coef = array![c64::new(0.0        , 0.0) , c64::new(norm_const , 0.0) , 
-                                  c64::new(norm_const , 0.0) , c64::new(0.0        , 0.0) ];
+  // let bell_psi_plus_coef = array![c64::new(0.0        , 0.0) , c64::new(norm_const , 0.0) , 
+  //                                 c64::new(norm_const , 0.0) , c64::new(0.0        , 0.0) ];
 
-  let bell_psi_minus_coef = array![c64::new(0.0         , 0.0) , c64::new(norm_const , 0.0) , 
-                                   c64::new(-norm_const , 0.0) , c64::new(0.0 ,        0.0) ];
+  // let bell_psi_minus_coef = array![c64::new(0.0         , 0.0) , c64::new(norm_const , 0.0) , 
+  //                                  c64::new(-norm_const , 0.0) , c64::new(0.0 ,        0.0) ];
 
-  let rho_max_mixed_1_qbit = array![ [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
-                                     [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] ];
+  // let rho_max_mixed_1_qbit = array![ [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
+  //                                    [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] ];
 
-  let rho_max_mixed_2_qbit = array![ [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] ];
+  // let rho_max_mixed_2_qbit = array![ [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
+  //                                    [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
+  //                                    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ] ,
+  //                                    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] ];
 
 ////////////////////////////////////////////////////////////////////////
   //Fibonacci function tests
@@ -39,10 +38,10 @@ fn main() {
 //////////////////////////////////////////////////////////////////////////  
   //Density Matrix tests
 
-  let rho_bell_phi_plus = create_dens_matrix(bell_phi_plus_coef);
-  let rho_bell_phi_minus = create_dens_matrix(bell_phi_minus_coef);
-  let rho_bell_psi_plus = create_dens_matrix(bell_psi_plus_coef);
-  let rho_bell_psi_minus = create_dens_matrix(bell_psi_minus_coef);
+  // let rho_bell_phi_plus = create_dens_matrix(bell_phi_plus_coef);
+  // let rho_bell_phi_minus = create_dens_matrix(bell_phi_minus_coef);
+  // let rho_bell_psi_plus = create_dens_matrix(bell_psi_plus_coef);
+  // let rho_bell_psi_minus = create_dens_matrix(bell_psi_minus_coef);
 
 
 
@@ -100,29 +99,40 @@ fn main() {
 //////////////////////////////////////////////////////////////////////////  
   //Concurrence Tests
 
-  // let coef_test = array![c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), 0.0), c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), 0.0)];
+  // let coef_test = array![c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), (data)0.0), c64::new(1./8_f64.sqrt(), 0.0), c64::new(0.75_f64.sqrt(), 0.0)];
   // let test_mat = create_dens_matrix(coef_test);
   // println!("test_mat = {}", test_mat);
   
-  println!("Concurrence of phi_+ is {}", find_concurrence(rho_bell_phi_plus));
-  println!("Concurrence of phi_- is {}", find_concurrence(rho_bell_phi_minus));
-  println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
-  println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
+  // println!("Concurrence of phi_+ is {}", find_concurrence(rho_bell_phi_plus));
+  // println!("Concurrence of phi_- is {}", find_concurrence(rho_bell_phi_minus));
+  // println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
+  // println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
 
-  println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
+  // println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
 
-  let theta = PI/3.;
-  // let psi_part_entangled = array![c64::new(theta.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(theta.sin(), 0.0)];
-  // let rho_part_entangled = create_dens_matrix(psi_part_entangled);  
+  let theta = PI*(75./180.);
+  let psi_part_entangled = array![c32::new(theta.cos(), 0.0), c32::new(0.0, 0.0), c32::new(0.0, 0.0), c32::new(theta.sin(), 0.0)];
+  let rho_part_entangled = create_dens_matrix(psi_part_entangled);
 
-  let psi_00 = array![c64::new(theta.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0)];
-  let psi_11 = array![c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(theta.sin(), 0.0)];  
+  // let rho_part_entangled_2 = array![ [  rho_part_entangled[[0,0]] , rho_part_entangled[[1,0]] , rho_part_entangled[[2,0]] , rho_part_entangled[[0,3]]   ] , 
+  //                                      [  rho_part_entangled[[0,1]] , rho_part_entangled[[1,1]] , rho_part_entangled[[2,1]] , rho_part_entangled[[3,1]]   ] ,
+  //                                      [  rho_part_entangled[[0,2]] , rho_part_entangled[[1,2]] , rho_part_entangled[[2,2]] , rho_part_entangled[[3,2]]   ] ,
+  //                                      [  rho_part_entangled[[0,3]] , rho_part_entangled[[1,3]] , rho_part_entangled[[2,3]] , rho_part_entangled[[3,3]]   ] ];
 
-  let rho_00 = create_dens_matrix(psi_00);  
-  let rho_11 = create_dens_matrix(psi_11);  
-  let rho_mix = rho_00 + rho_11;
+  // let psi_00 = array![c32::new(theta.cos(), 0.0), c32::new(0.0, 0.0), c32::new(0.0, 0.0), c32::new(0.0, 0.0)];
+  // let psi_11 = array![c32::new(0.0, 0.0), c32::new(0.0, 0.0), c32::new(0.0, 0.0), c32::new(theta.sin(), 0.0)];  
 
+  // let rho_00 = create_dens_matrix(psi_00);  
+  // let rho_11 = create_dens_matrix(psi_11);  
+  // let rho_mix = create_dens_matrix(psi_00 + psi_11);
+  // let rho_a = rho_part_entangled.mapv(|rho_part_entangled| (rho_part_entangled.re * 1000.).round() / 1000.0);
+  // let rho_b = rho_part_entangled.mapv(|rho_part_entangled| (rho_part_entangled.im * 1000.).round() / 1000.0);
+  // let rho_c = rho_a.map(|f| c32::new(*f, 0.0));
+  // let rho_d = rho_b.map(|g| c32::new(0.0, *g));
+  // let rho_rounded = rho_c + rho_d;
+  // println!("rounded rho is \n {}\n ", rho_rounded);
   // println!("{}",rho_part_entangled);
-  // println!("Concurrence of partially entangled state is {}", find_concurrence(rho_part_entangled));  
-  println!("Concurrence of rho_mix is {}", find_concurrence(rho_mix));  
+
+  println!("Concurrence of partially entangled state is {}", find_concurrence(rho_part_entangled));  
+  // println!("Concurrence of rho_mix is {}", find_concurrence(rho_mix));  
 }
