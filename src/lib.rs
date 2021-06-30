@@ -4,7 +4,9 @@ use ndarray_linalg::*;
 
 pub type Complex = num_complex::Complex<f64>;
 pub type VecC64 = ndarray::Array1<c64>;
+pub type VecF64 = ndarray::Array1<f64>;
 pub type MatrixC64 = ndarray::Array2<c64>;
+pub type MatrixF64 = ndarray::Array2<f64>;
 
 /// Get the "n"th fibonacci number using integers only.
 pub fn fib(n : u64) -> u64 {
@@ -29,67 +31,43 @@ pub fn fibc(n: Complex) -> Complex{
 
 }
 
+/////////////////////////////////////////////////////////////////////
+////////////////////Entanglement Calculations////////////////////////
+/////////////////////////////////////////////////////////////////////
+
 pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64{
 
   let coef_num = coefs.len() as i32;
   let dens_matrix_len = coef_num as usize;
   let mut dens_matrix = MatrixC64::zeros((dens_matrix_len , dens_matrix_len).f());
 
-  let mut ctr_i = 0;
+  let mut i = 0;
 
   for _coef in 0..coef_num{
-    let mut ctr_j = 0;
+    let mut j = 0;
     for _coef_2 in 0..coef_num{
-      dens_matrix[ [ctr_i , ctr_j] ] = coefs[ctr_i] * ( coefs[ctr_j] ).conj();
-      ctr_j += 1;
+      dens_matrix[ [i , j] ] = coefs[i] * ( coefs[j] ).conj();
+      j += 1;
     }
-  ctr_i +=1;
+  i +=1;
   }
   
   dens_matrix
-}
-
-pub fn find_dens_matrix_sqrd(rho: MatrixC64) -> MatrixC64{
-  let rho_sqrd = rho.dot(&rho); 
-  rho_sqrd
 }
 
 pub fn find_purity(rho_sqrd: MatrixC64)-> f64{
   let purity = rho_sqrd.trace().unwrap();
   purity.re
 }
-pub fn find_dim(rho_sqrd: MatrixC64)-> i32 {
-  let shape = rho_sqrd.dim();
-  shape.1 as i32
-}
 
-pub fn fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 
-  let (matrix_d, matrix_s) = rescale_neg_eigvals(rho);
-  let sqrt_rho = find_sqr_root_of_matrix(matrix_d, matrix_s);
+pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
+
+  let sqrt_rho = find_sqr_root_of_matrix(rho);
   let product = sqrt_rho.dot(&sigma).dot(&sqrt_rho);
-  let (matrix_d_product, matrix_s_product) = rescale_neg_eigvals(product);  
-  let sqrt_product = find_sqr_root_of_matrix(matrix_d_product, matrix_s_product);
+  let sqrt_product = find_sqr_root_of_matrix(product);
   (sqrt_product.trace().unwrap()).re
 }
-
-// pub fn fidelity_test(rho: MatrixC64, sigma: MatrixC64) -> f64 {
-
-//   let (eigs_old, vecs_old) = rho.eigh(UPLO::Lower).unwrap();
-//   println!("Eigenvalues of old matrix are {}",eigs_old);
-//   println!("Eigenvectors of old matrix are {}",vecs_old);  
-//   println!("rho_old is {}",rho);
-//   let rho_rescaled = rescale_neg_eigvals(rho);
-//   println!("rho_rescaled is {}",rho_rescaled);
-//   let (eigs, vecs) = rho_rescaled.eigh(UPLO::Lower).unwrap();
-//   println!("Eigenvalues of rescaled matrix are {}",eigs);
-//   println!("Eigenvectors of rescaled matrix are {}",vecs);
-//   let sqrt_rho = rho_rescaled.ssqrt(UPLO::Lower).unwrap();
-//   let product = sqrt_rho.dot(&sigma).dot(&sqrt_rho);
-//   let product_rescaled = rescale_neg_eigvals(product);  
-//   let sqrt_product = product_rescaled.ssqrt(UPLO::Lower).unwrap();
-//   (sqrt_product.trace().unwrap()).re
-// }
 
 pub fn find_concurrence(rho: MatrixC64) -> f64{
 
@@ -99,16 +77,14 @@ pub fn find_concurrence(rho: MatrixC64) -> f64{
                         [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
 
   let rho_star = rho.mapv(|rho| rho.conj());
-  let (matrix_d, matrix_s) = rescale_neg_eigvals(rho.clone());
-  let sqrt_rho = find_sqr_root_of_matrix(matrix_d, matrix_s);
+  let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
 
   let rho_tilde = pauli_y.dot(&rho_star).dot(&pauli_y);
 
-  let matrix_prod = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
-  let (matrix_d_prod, matrix_s_prod) = rescale_neg_eigvals(matrix_prod);
-  let sqrt_prod = find_sqr_root_of_matrix(matrix_d_prod, matrix_s_prod);
+  let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
+  let sqrt_product = find_sqr_root_of_matrix(product);
 
-  let (eigvals, _eigvecs) = sqrt_prod.eigh(UPLO::Lower).unwrap();
+  let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
   
   0_f64.max(eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
 }
@@ -126,39 +102,9 @@ pub fn find_trace_norm(rho: MatrixC64) -> f64{
   let rho_partial_transpose_dagger = rho_partial_transpose_star.t();
   
   let inner_product = (rho_partial_transpose_dagger).dot(&rho_partial_transpose);
-  let (matrix_d, matrix_s) = rescale_neg_eigvals(inner_product);
-  let partial_transpose_norm = find_sqr_root_of_matrix(matrix_d, matrix_s); 
+  let partial_transpose_norm = find_sqr_root_of_matrix(inner_product); 
   let trace_norm =  partial_transpose_norm.trace().unwrap();
   trace_norm.re
-}
-
-pub fn find_partial_transpose(rho: MatrixC64) -> MatrixC64{
-
-  let dim = find_dim(rho.clone()) as usize;
-  let mut partial_transpose_matrix = MatrixC64::zeros((dim , dim).f());
-
-  let upper_left_block  = rho.slice(s! [0..(dim / 2)   , 0..(dim / 2)  ] );
-  let upper_right_block = rho.slice(s! [0..(dim / 2)   , (dim / 2)..dim] );
-  let lower_left_block  = rho.slice(s! [(dim / 2)..dim , 0..(dim / 2)  ] );
-  let lower_right_block = rho.slice(s! [(dim / 2)..dim , (dim / 2)..dim] );
-
-  let upper_right_block_transpose = upper_right_block.t();
-  let lower_left_block_transpose = lower_left_block.t();
-
-  let mut i = 0;
-  for _index_1 in 0..dim/2{
-    let mut j = 0;
-    for _index_2 in 0..dim/2{
-      partial_transpose_matrix[[i         , j        ]] = upper_left_block[ [i , j] ];
-      partial_transpose_matrix[[i         , j + dim/2]] = upper_right_block_transpose[ [i , j] ];
-      partial_transpose_matrix[[i + dim/2 , j        ]] = lower_left_block_transpose[ [i , j] ];
-      partial_transpose_matrix[[i + dim/2 , j + dim/2]] = lower_right_block[ [i , j] ];
-      j += 1;
-    }
-    i += 1;
-  }
-
-  partial_transpose_matrix
 }
 
 pub fn find_log_negativity(rho: MatrixC64) -> f64{
@@ -166,27 +112,34 @@ pub fn find_log_negativity(rho: MatrixC64) -> f64{
   (2.*neg + 1.).log2()
 }
 
+/////////////////////////////////////////////////////////////////////
+/////////////////////////Matrix Operations///////////////////////////
+/////////////////////////////////////////////////////////////////////
 
-pub fn find_sqr_root_of_matrix(matrix_d: MatrixC64, matrix_s: MatrixC64) -> MatrixC64 {
+pub fn find_dim(matrix: MatrixC64)-> i32 {
+  let shape = matrix.dim();
+  shape.1 as i32
+}
 
-//Hermitian matrices are always diagonalizable, so we can express rho = S*D*(S^-1),
-//so the sqrt(rho) = S*(D^0.5)*(S^-1). D^0.5 is a matrix of the sqr root of the 
-//elements of D since it is diagonal.
+pub fn find_matrix_sqrd(matrix: MatrixC64) -> MatrixC64{
+  let matrix_sqrd = matrix.dot(&matrix); 
+  matrix_sqrd
+}
 
+pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
+  
+  let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
   let matrix_s_inv = matrix_s.inv().unwrap();
   let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
   let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
   let sqrt_product = matrix_s.dot(&sqrt_matrix_d_complex).dot(&matrix_s_inv);
   sqrt_product
-
 }
 
 pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
   
   let (mut eigvals, vecs) = rho.eigh(UPLO::Lower).unwrap();
   let eig_len = eigvals.len() as i32;
-  println!("eigvals = {}",eigvals);
-
 
   let mut j = 0;
   for _ctr in 0..eig_len {
@@ -198,7 +151,6 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
     }
   }
 
-  println!("eigvals_new = {}",eigvals);
   let eig_num = eigvals.len() as i32;
   let matrix_d_len = eig_num as usize;
   let mut matrix_d = MatrixC64::zeros((matrix_d_len,matrix_d_len).f());
@@ -220,15 +172,53 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
   let matrix_s = vecs;
 
   (matrix_d, matrix_s)
-
-  //Used for debugging
-  // let matrix_s_inv = matrix_s.inv().unwrap();
-  // let rho_new = matrix_s.dot(&matrix_d).dot(&matrix_s_inv);
-  // println!("matrix_d = {}", matrix_d);
-  // let tr = rho_new.trace().unwrap();
-  // let rho_rescaled = rho_new.mapv(|rho_new| rho_new/tr);
-  // rho_new
 }
+
+pub fn find_schmidt_number(matrix: MatrixF64) -> f64{
+  let (_u, s, _v_transpose) = matrix.svd(true , true).unwrap();
+  println!("S is {:?}",s);
+  let sum_eigvals_sqrd = s.mapv(|s| s*s).sum();
+  let norm_const = 1./sum_eigvals_sqrd;
+  println!("{}",norm_const);
+  let renormed_s = s.mapv(|s| s*(norm_const.sqrt()));
+  println!("{}",renormed_s);
+  let sum_eig_sqrd = renormed_s.mapv(|renormed_s| renormed_s*renormed_s*renormed_s*renormed_s).sum();
+  let k = 1./sum_eig_sqrd;
+  k
+}
+
+pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64{
+
+  let dim = find_dim(matrix.clone()) as usize;
+  let mut partial_transpose_matrix = MatrixC64::zeros((dim , dim).f());
+
+  let upper_left_block  = matrix.slice(s! [0..(dim / 2)   , 0..(dim / 2)  ] );
+  let upper_right_block = matrix.slice(s! [0..(dim / 2)   , (dim / 2)..dim] );
+  let lower_left_block  = matrix.slice(s! [(dim / 2)..dim , 0..(dim / 2)  ] );
+  let lower_right_block = matrix.slice(s! [(dim / 2)..dim , (dim / 2)..dim] );
+
+  let upper_right_block_transpose = upper_right_block.t();
+  let lower_left_block_transpose = lower_left_block.t();
+
+  let mut i = 0;
+  for _index_1 in 0..dim/2{
+    let mut j = 0;
+    for _index_2 in 0..dim/2{
+      partial_transpose_matrix[[i         , j        ]] = upper_left_block[ [i , j] ];
+      partial_transpose_matrix[[i         , j + dim/2]] = upper_right_block_transpose[ [i , j] ];
+      partial_transpose_matrix[[i + dim/2 , j        ]] = lower_left_block_transpose[ [i , j] ];
+      partial_transpose_matrix[[i + dim/2 , j + dim/2]] = lower_right_block[ [i , j] ];
+      j += 1;
+      }
+    i += 1;
+    }
+
+  partial_transpose_matrix
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////Tests////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
