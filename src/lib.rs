@@ -1,48 +1,25 @@
-use std::f64::consts::PI;
 use ndarray::prelude::*;
 use ndarray_linalg::*;
 
-pub type Complex = num_complex::Complex<f64>;
+pub use ndarray_linalg::c64;
 pub type VecC64 = ndarray::Array1<c64>;
 pub type VecF64 = ndarray::Array1<f64>;
 pub type MatrixC64 = ndarray::Array2<c64>;
 pub type MatrixF64 = ndarray::Array2<f64>;
 
-/// Get the "n"th fibonacci number using integers only.
-pub fn fib(n : u64) -> u64 {
- 
- let n_float = n as f64;
- let phi = ( 1. + 5_f64.sqrt() ) / 2.;
- let fib_num = ( (phi.powf(n_float) / 5_f64.sqrt() ) + 0.5 ).floor();
-
- fib_num as u64
-
-}
-
-/// Get the "n"th fibonacci number using complex numbers. For example, n = Complex::new(2.1, -3.3).
-pub fn fibc(n: Complex) -> Complex{
- 
- let phi: f64 = ( 1. + 5_f64.sqrt() ) / 2.;
- let ln_phi = Complex::from( phi.ln() );
- let phi_to_the_n = (n * ln_phi).exp();
- let phi_to_the_neg_n = (-n * ln_phi).exp();
-
- (phi_to_the_n - ( (PI * n).cos() ) * phi_to_the_neg_n) / 5_f64.sqrt()
-
-}
-
 /////////////////////////////////////////////////////////////////////
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64{
+//TODO: Create a module of these comments
+
+pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64 {
 
   let coef_num = coefs.len() as i32;
   let dens_matrix_len = coef_num as usize;
   let mut dens_matrix = MatrixC64::zeros((dens_matrix_len , dens_matrix_len).f());
 
   let mut i = 0;
-
   for _coef in 0..coef_num{
     let mut j = 0;
     for _coef_2 in 0..coef_num{
@@ -55,11 +32,11 @@ pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64{
   dens_matrix
 }
 
-pub fn find_purity(rho_sqrd: MatrixC64)-> f64{
+pub fn find_purity(rho_sqrd: MatrixC64)-> f64 {
   let purity = rho_sqrd.trace().unwrap();
   purity.re
 }
-
+//TODO: Rust Doc comments in Rust cookbook
 
 pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 
@@ -69,8 +46,10 @@ pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
   (sqrt_product.trace().unwrap()).re
 }
 
-pub fn find_concurrence(rho: MatrixC64) -> f64{
+pub fn find_concurrence(rho: MatrixC64) -> f64 {
 
+//TODO:
+//Global variable, lazy static
   let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
                         [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
                         [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
@@ -85,17 +64,20 @@ pub fn find_concurrence(rho: MatrixC64) -> f64{
   let sqrt_product = find_sqr_root_of_matrix(product);
 
   let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
-  
+  dbg!(&eigvals);
+  let mut eigvals = eigvals.to_vec();
+  eigvals.sort_by(|a, b| a.partial_cmp(b).unwrap());
+  // eigvals.sort();
   0_f64.max(eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
 }
 
-pub fn find_negativity(rho: MatrixC64) -> f64{
+pub fn find_negativity(rho: MatrixC64) -> f64 {
 
   let trace_norm = find_trace_norm(rho);
   (trace_norm - 1.)/2.
 }
 
-pub fn find_trace_norm(rho: MatrixC64) -> f64{
+pub fn find_trace_norm(rho: MatrixC64) -> f64 {
 
   let rho_partial_transpose = find_partial_transpose(rho);
   let rho_partial_transpose_star   = rho_partial_transpose.mapv(|rho_partial_transpose| rho_partial_transpose.conj());
@@ -107,7 +89,7 @@ pub fn find_trace_norm(rho: MatrixC64) -> f64{
   trace_norm.re
 }
 
-pub fn find_log_negativity(rho: MatrixC64) -> f64{
+pub fn find_log_negativity(rho: MatrixC64) -> f64 {
   let neg = find_negativity(rho);
   (2.*neg + 1.).log2()
 }
@@ -121,7 +103,7 @@ pub fn find_dim(matrix: MatrixC64)-> i32 {
   shape.1 as i32
 }
 
-pub fn find_matrix_sqrd(matrix: MatrixC64) -> MatrixC64{
+pub fn find_matrix_sqrd(matrix: MatrixC64) -> MatrixC64 {
   let matrix_sqrd = matrix.dot(&matrix); 
   matrix_sqrd
 }
@@ -130,8 +112,13 @@ pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
   
   let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
   let matrix_s_inv = matrix_s.inv().unwrap();
+
+  //TODO:
+  //Why taking the real part and then converting to complex again?
   let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
   let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
+  // let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
+
   let sqrt_product = matrix_s.dot(&sqrt_matrix_d_complex).dot(&matrix_s_inv);
   sqrt_product
 }
@@ -158,6 +145,8 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
   let mut i = 0;
   let eigvals_c64 = eigvals.map(|f| c64::new(*f, 0.0));
 
+//numpy.diag reminder
+
   for _num in 0..eig_num{
     let mut j = 0;
     for _num_2 in 0..eig_num{
@@ -169,25 +158,29 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
     i +=1;
   }
 
+  // let matrix_test = MatrixC64::from::diag(eigvals_c64);
+  
   let matrix_s = vecs;
 
   (matrix_d, matrix_s)
 }
 
-pub fn find_schmidt_number(matrix: MatrixF64) -> f64{
-  let (_u, s, _v_transpose) = matrix.svd(true , true).unwrap();
+pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
+  let jsa = jsi.mapv(|jsi| jsi.sqrt());
+  let (_u, s, _v_transpose) = jsa.svd(true , true).unwrap();
   println!("S is {:?}",s);
   let sum_eigvals_sqrd = s.mapv(|s| s*s).sum();
   let norm_const = 1./sum_eigvals_sqrd;
   println!("{}",norm_const);
   let renormed_s = s.mapv(|s| s*(norm_const.sqrt()));
   println!("{}",renormed_s);
-  let sum_eig_sqrd = renormed_s.mapv(|renormed_s| renormed_s*renormed_s*renormed_s*renormed_s).sum();
+
+  let sum_eig_sqrd = renormed_s.mapv(|renormed_s| renormed_s.powf(4.)).sum();
   let k = 1./sum_eig_sqrd;
   k
 }
 
-pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64{
+pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
 
   let dim = find_dim(matrix.clone()) as usize;
   let mut partial_transpose_matrix = MatrixC64::zeros((dim , dim).f());
@@ -200,10 +193,12 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64{
   let upper_right_block_transpose = upper_right_block.t();
   let lower_left_block_transpose = lower_left_block.t();
 
+//TODO: Stack/concatenate
+//Find for loops and see how to optimize
   let mut i = 0;
-  for _index_1 in 0..dim/2{
+  for _index_1 in 0..dim/2 {
     let mut j = 0;
-    for _index_2 in 0..dim/2{
+    for _index_2 in 0..dim/2 {
       partial_transpose_matrix[[i         , j        ]] = upper_left_block[ [i , j] ];
       partial_transpose_matrix[[i         , j + dim/2]] = upper_right_block_transpose[ [i , j] ];
       partial_transpose_matrix[[i + dim/2 , j        ]] = lower_left_block_transpose[ [i , j] ];
@@ -216,23 +211,3 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64{
   partial_transpose_matrix
 
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////Tests////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_fibc() {
-    let actual = fibc(Complex::new(2.1, -3.3));
-    // let expected = Complex::new( 842.107900737978028312629,  -2448.9411071123121308522611};
-    let expected = Complex::new(2.1, 4.4);
-    
-    assert!( (actual - expected).norm_sqr() <= 1e-6 );
-    println!("{}" , actual)
-  }
-}
-
