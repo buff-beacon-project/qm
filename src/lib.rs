@@ -7,13 +7,14 @@ pub type VecF64 = ndarray::Array1<f64>;
 pub type MatrixC64 = ndarray::Array2<c64>;
 pub type MatrixF64 = ndarray::Array2<f64>;
 
+//TODO: Create a module of these comments
+//TODO: Rust Doc comments in Rust cookbook
+
 /////////////////////////////////////////////////////////////////////
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-//TODO: Create a module of these comments
-
-pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64 {
+pub fn create_dens_matrix(coefs: &VecC64) -> MatrixC64 {
 
   let coef_num = coefs.len() as i32;
   let dens_matrix_len = coef_num as usize;
@@ -28,7 +29,6 @@ pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64 {
     }
   i +=1;
   }
-  
   dens_matrix
 }
 
@@ -36,7 +36,7 @@ pub fn find_purity(rho_sqrd: MatrixC64)-> f64 {
   let purity = rho_sqrd.trace().unwrap();
   purity.re
 }
-//TODO: Rust Doc comments in Rust cookbook
+
 
 pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 
@@ -47,27 +47,22 @@ pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 }
 
 pub fn find_concurrence(rho: MatrixC64) -> f64 {
-
-//TODO:
-//Global variable, lazy static
+  
   let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
-                        [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
-                        [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
-                        [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
+                                              [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
+                                              [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
+                                              [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
 
   let rho_star = rho.mapv(|rho| rho.conj());
   let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
-
   let rho_tilde = pauli_y.dot(&rho_star).dot(&pauli_y);
 
   let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
   let sqrt_product = find_sqr_root_of_matrix(product);
 
   let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
-  dbg!(&eigvals);
   let mut eigvals = eigvals.to_vec();
   eigvals.sort_by(|a, b| a.partial_cmp(b).unwrap());
-  // eigvals.sort();
   0_f64.max(eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
 }
 
@@ -115,11 +110,12 @@ pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
 
   //TODO:
   //Why taking the real part and then converting to complex again?
-  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
-  let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
-  // let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
+  // let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
+  // let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
 
-  let sqrt_product = matrix_s.dot(&sqrt_matrix_d_complex).dot(&matrix_s_inv);
+  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
+
+  let sqrt_product = matrix_s.dot(&sqrt_matrix_d).dot(&matrix_s_inv);
   sqrt_product
 }
 
@@ -138,28 +134,9 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
     }
   }
 
-  let eig_num = eigvals.len() as i32;
-  let matrix_d_len = eig_num as usize;
-  let mut matrix_d = MatrixC64::zeros((matrix_d_len,matrix_d_len).f());
-
-  let mut i = 0;
   let eigvals_c64 = eigvals.map(|f| c64::new(*f, 0.0));
 
-//numpy.diag reminder
-
-  for _num in 0..eig_num{
-    let mut j = 0;
-    for _num_2 in 0..eig_num{
-      if i==j{
-        matrix_d[ [i , j] ] = eigvals_c64[i];
-      }
-      j += 1;
-    }
-    i +=1;
-  }
-
-  // let matrix_test = MatrixC64::from::diag(eigvals_c64);
-  
+  let matrix_d = MatrixC64::from_diag(&eigvals_c64);
   let matrix_s = vecs;
 
   (matrix_d, matrix_s)
@@ -168,13 +145,9 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
 pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
   let jsa = jsi.mapv(|jsi| jsi.sqrt());
   let (_u, s, _v_transpose) = jsa.svd(true , true).unwrap();
-  println!("S is {:?}",s);
   let sum_eigvals_sqrd = s.mapv(|s| s*s).sum();
   let norm_const = 1./sum_eigvals_sqrd;
-  println!("{}",norm_const);
   let renormed_s = s.mapv(|s| s*(norm_const.sqrt()));
-  println!("{}",renormed_s);
-
   let sum_eig_sqrd = renormed_s.mapv(|renormed_s| renormed_s.powf(4.)).sum();
   let k = 1./sum_eig_sqrd;
   k

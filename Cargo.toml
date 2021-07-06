@@ -14,11 +14,12 @@ thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 dimensioned = "0.7"
-lazy_static = "1.4.0"
+
 
 [dev-dependencies]
 criterion = "0.2"
 float-cmp = "0.5"
+lazy_static = "1.4.0"
 
 # Benchmarks
 [[bench]]

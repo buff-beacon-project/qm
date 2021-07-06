@@ -6,60 +6,64 @@ use ndarray::prelude::*;
 // use std::io::{self, prelude::*, BufReader};
 extern crate lazy_static;
 use lazy_static::lazy_static;
-fn main() {
+
+  pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+  pub const THETA: f64 = PI*(30./180.);
+
+lazy_static!{
+  pub static ref BELL_PHI_PLUS_COEF: VecC64 = array![c64::new(NORM_CONST , 0.0) , c64::new(0.0        , 0.0) , 
+                                                     c64::new(0.0        , 0.0) , c64::new(NORM_CONST , 0.0) ];
+
+  pub static ref BELL_PHI_MINUS_COEF: VecC64 = array![c64::new(NORM_CONST , 0.0) , c64::new(0.0         , 0.0) , 
+                                                      c64::new(0.0        , 0.0) , c64::new(-NORM_CONST , 0.0) ];
+
+  pub static ref BELL_PSI_PLUS_COEF: VecC64 = array![c64::new(0.0        , 0.0) , c64::new(NORM_CONST , 0.0) , 
+                                                     c64::new(NORM_CONST , 0.0) , c64::new(0.0        , 0.0) ];
+
+  pub static ref BELL_PSI_MINUS_COEF: VecC64 = array![c64::new(0.0         , 0.0) , c64::new(NORM_CONST , 0.0) , 
+                                                      c64::new(-NORM_CONST , 0.0) , c64::new(0.0 ,        0.0) ];
+
+  pub static ref RHO_MAX_MIXED_1_QBIT: MatrixC64 = array![ [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
+                                                           [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] ];
+
+  pub static ref RHO_MAX_MIXED_2_QBIT: MatrixC64 = array![ [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
+                                                           [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
+                                                           [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ] ,
+                                                           [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] ];
+
+  pub static ref TEST_MAT: MatrixC64 = array![ [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+                                               [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(7.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
+                                               [c64::new(9.0 , 0.0)  , c64::new(10.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
+                                               [c64::new(13.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] ];
+
+  pub static ref PSI_PART_ENTANGLED: VecC64 = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(THETA.sin(), 0.0)];
+
+
+}
+
+pub fn main() {
 
 //Put headers as functions
 
 ////////////////////////////////////////////////////////////////////////
   //Global variables (Bell States, maximally mixed state)
 
-lazy_static!{
-  pub static ref norm_const: f64 = 1./2_f64.sqrt();
 
-  pub static ref bell_phi_plus_coef: VecC64 = array![c64::new(*norm_const , 0.0) , c64::new(0.0        , 0.0) , 
-                                  c64::new(0.0        , 0.0) , c64::new(*norm_const , 0.0) ];
-
-  pub static ref bell_phi_minus_coef: VecC64 = array![c64::new(*norm_const , 0.0) , c64::new(0.0         , 0.0) , 
-                                   c64::new(0.0        , 0.0) , c64::new(-*norm_const , 0.0) ];
-
-  pub static ref bell_psi_plus_coef: VecC64 = array![c64::new(0.0        , 0.0) , c64::new(*norm_const , 0.0) , 
-                                  c64::new(*norm_const , 0.0) , c64::new(0.0        , 0.0) ];
-
-  pub static ref bell_psi_minus_coef: VecC64 = array![c64::new(0.0         , 0.0) , c64::new(*norm_const , 0.0) , 
-                                   c64::new(-*norm_const , 0.0) , c64::new(0.0 ,        0.0) ];
-
-  pub static ref rho_max_mixed_1_qbit: MatrixC64 = array![ [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
-                                     [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] ];
-
-  pub static ref rho_max_mixed_2_qbit: MatrixC64 = array![ [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ] ,
-                                     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] ];
-
-  pub static ref test_mat: MatrixC64 = array![             [c64::new(1.0 , 0.0) , c64::new(2.0 , 0.0)   , c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
-                                     [c64::new(5.0 , 0.0) , c64::new(6.0 , 0.0)   , c64::new(7.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
-                                     [c64::new(9.0 , 0.0) , c64::new(10.0 , 0.0)  , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0) ] ,
-                                     [c64::new(13.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] ];
-  pub static ref theta: f64 = PI*(30./180.);
-  pub static ref psi_part_entangled: VecC64 = array![c64::new(theta.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(theta.sin(), 0.0)];
-}
-  let rho_bell_phi_plus = create_dens_matrix(bell_phi_plus_coef);
-  let rho_bell_phi_minus = create_dens_matrix(bell_phi_minus_coef);
-  let rho_bell_psi_plus = create_dens_matrix(bell_psi_plus_coef);
-  let rho_bell_psi_minus = create_dens_matrix(bell_psi_minus_coef);
-
-  let rho_part_entangled = create_dens_matrix(psi_part_entangled);
-
-  test_fidelity()
+  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_COEF);
+  let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_COEF);
+  let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_COEF);
+  let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_COEF);
+  let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
+  test_dens_matrix()
 
 }
 
-// pub fn test_dens_matrix() {
-//   println!("dens matrix for phi_+ = \n {} \n", rho_bell_phi_plus);
-//   println!("dens matrix for phi_- = \n {} \n", rho_bell_phi_minus);
-//   println!("dens matrix for psi_+ = \n {} \n", rho_bell_psi_plus);
-//   println!("dens matrix for psi_- = \n {} \n", rho_bell_psi_minus);
-// }
+pub fn test_dens_matrix() {
+  println!("dens matrix for phi_+ = \n {} \n", rho_bell_phi_plus);
+  println!("dens matrix for phi_- = \n {} \n", rho_bell_phi_minus);
+  println!("dens matrix for psi_+ = \n {} \n", rho_bell_psi_plus);
+  println!("dens matrix for psi_- = \n {} \n", rho_bell_psi_minus);
+}
 
 // pub fn test_purity() {
   
@@ -78,18 +82,18 @@ lazy_static!{
 //   println!("The purity ranges from {} to {}", 1./find_dim(rho_bell_sqrd.clone()), 1);
 // }
 
-pub fn test_fidelity() {
+// pub fn test_fidelity() {
 
-  println!("The fidelity for a maximally mixed state with itself is {} \n",find_fidelity(rho_max_mixed_2_qbit.clone(),rho_max_mixed_2_qbit.clone()));
-  println!("The fidelity for a maximally mixed state with phi_+ is {} \n",find_fidelity(rho_max_mixed_2_qbit.clone(),rho_bell_phi_plus.clone()));
-  println!("The fidelity for a maximally mixed state with phi_- is {} \n",find_fidelity(rho_max_mixed_2_qbit.clone(),rho_bell_phi_minus.clone()));  
-  println!("The fidelity for a maximally mixed state with psi_+  is {} \n",find_fidelity(rho_max_mixed_2_qbit.clone(),rho_bell_psi_plus.clone()));  
-  println!("The fidelity for a maximally mixed state with psi_-  is {} \n",find_fidelity(rho_max_mixed_2_qbit.clone(),rho_bell_psi_minus.clone()));  
+//   println!("The fidelity for a maximally mixed state with itself is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),RHO_MAX_MIXED_2_QBIT.clone()));
+//   println!("The fidelity for a maximally mixed state with phi_+ is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_phi_plus.clone()));
+//   println!("The fidelity for a maximally mixed state with phi_- is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_phi_minus.clone()));  
+//   println!("The fidelity for a maximally mixed state with psi_+  is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_psi_plus.clone()));  
+//   println!("The fidelity for a maximally mixed state with psi_-  is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_psi_minus.clone()));  
 
-  println!("The fidelity for psi_- with psi_-  is {} \n",find_fidelity(rho_bell_psi_minus.clone(),rho_bell_psi_minus.clone()));
-  println!("The fidelity for psi_+ with psi_-  is {} \n",find_fidelity(rho_bell_psi_plus.clone(),rho_bell_psi_minus.clone()));   
-  println!("Fidelity of cos({:.4})|00> + sin({:.4})|11> is {}", theta, theta, find_fidelity(rho_part_entangled.clone(), rho_part_entangled.clone()));   
-}
+  // println!("The fidelity for psi_- with psi_-  is {} \n",find_fidelity(rho_bell_psi_minus.clone(),rho_bell_psi_minus.clone()));
+  // println!("The fidelity for psi_+ with psi_-  is {} \n",find_fidelity(rho_bell_psi_plus.clone(),rho_bell_psi_minus.clone()));   
+  // println!("Fidelity of cos({:.4})|00> + sin({:.4})|11> is {}", theta, theta, find_fidelity(rho_part_entangled.clone(), rho_part_entangled.clone()));   
+// }
 
 // pub fn test_concurrence() {
   
@@ -98,7 +102,7 @@ pub fn test_fidelity() {
 //   println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
 //   println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
 
-//   println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
+//   println!("Concurrence of mixed state is {}", find_concurrence(RHO_MAX_MIXED_2_QBIT));
 //   println!("Concurrence of cos({:.4})|00> + sin({:.4})|11> is {}", theta, theta,find_concurrence(rho_part_entangled));  
 // }
 
