@@ -9,31 +9,26 @@ pub type MatrixF64 = ndarray::Array2<f64>;
 
 //TODO: Create a module of these comments
 //TODO: Rust Doc comments in Rust cookbook
-//TODO: Lazy static variables
-//TODO: Why taking the real part and then converting to complex again?
-//TODO: Stack/concatenate
-//TODO: Be able to read in csv of numpy arrays
+
 /////////////////////////////////////////////////////////////////////
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64 {
+pub fn create_dens_matrix(coefs: &VecC64) -> MatrixC64 {
 
-  // let vec_len = coefs.len() as usize;  
-  // let mut coefs_conj = VecC64::zeros(vec_len);
-  // let iter = coefs.iter();
-  // let mut i = 0;
-  // for coef in iter{
-  //   let coef_star = coef.conj();
-  //   coefs_conj[i] = coef_star;
-  //   i += 1;
-  // }
+  let coef_num = coefs.len() as i32;
+  let dens_matrix_len = coef_num as usize;
+  let mut dens_matrix = MatrixC64::zeros((dens_matrix_len , dens_matrix_len).f());
 
-  let coefs_conj = coefs.map(|coefs| coefs.conj());
-
-  let a = into_col(coefs);
-  let b = into_row(coefs_conj);
-  let dens_matrix = a.dot(&b);
+  let mut i = 0;
+  for _coef in 0..coef_num{
+    let mut j = 0;
+    for _coef_2 in 0..coef_num{
+      dens_matrix[ [i , j] ] = coefs[i] * ( coefs[j] ).conj();
+      j += 1;
+    }
+  i +=1;
+  }
   dens_matrix
 }
 
@@ -113,9 +108,10 @@ pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
   let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
   let matrix_s_inv = matrix_s.inv().unwrap();
 
-
-  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
-  let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
+  //TODO:
+  //Why taking the real part and then converting to complex again?
+  // let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
+  // let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
 
   let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
 
@@ -170,6 +166,8 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
   let upper_right_block_transpose = upper_right_block.t();
   let lower_left_block_transpose = lower_left_block.t();
 
+//TODO: Stack/concatenate
+//Find for loops and see how to optimize
   let mut i = 0;
   for _index_1 in 0..dim/2 {
     let mut j = 0;

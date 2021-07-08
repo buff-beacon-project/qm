@@ -48,6 +48,7 @@ pub fn main() {
 ////////////////////////////////////////////////////////////////////////
   //Global variables (Bell States, maximally mixed state)
 
+
   let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_COEF);
   let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_COEF);
   let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_COEF);
