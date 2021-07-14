@@ -1,5 +1,9 @@
 use ndarray::prelude::*;
 use ndarray_linalg::*;
+extern crate lazy_static;
+extern crate ndarray;
+use ndarray::{stack, Axis};
+// use lazy_static::lazy_static;
 
 pub use ndarray_linalg::c64;
 pub type VecC64 = ndarray::Array1<c64>;
@@ -9,29 +13,16 @@ pub type MatrixF64 = ndarray::Array2<f64>;
 
 //TODO: Create a module of these comments
 //TODO: Rust Doc comments in Rust cookbook
-//TODO: Lazy static variables
-//TODO: Why taking the real part and then converting to complex again?
 //TODO: Stack/concatenate
 //TODO: Be able to read in csv of numpy arrays
 /////////////////////////////////////////////////////////////////////
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-pub fn create_dens_matrix(coefs: VecC64) -> MatrixC64 {
-
-  // let vec_len = coefs.len() as usize;  
-  // let mut coefs_conj = VecC64::zeros(vec_len);
-  // let iter = coefs.iter();
-  // let mut i = 0;
-  // for coef in iter{
-  //   let coef_star = coef.conj();
-  //   coefs_conj[i] = coef_star;
-  //   i += 1;
-  // }
+pub fn create_dens_matrix(coefs: &VecC64) -> MatrixC64 {
 
   let coefs_conj = coefs.map(|coefs| coefs.conj());
-
-  let a = into_col(coefs);
+  let a = into_col(coefs.clone());
   let b = into_row(coefs_conj);
   let dens_matrix = a.dot(&b);
   dens_matrix
@@ -54,9 +45,9 @@ pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 pub fn find_concurrence(rho: MatrixC64) -> f64 {
   
   let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
-                                              [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
-                                              [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
-                                              [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
+                        [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
+                        [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
+                        [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
 
   let rho_star = rho.mapv(|rho| rho.conj());
   let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
@@ -112,13 +103,7 @@ pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
   
   let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
   let matrix_s_inv = matrix_s.inv().unwrap();
-
-
-  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d.re).sqrt());
-  let sqrt_matrix_d_complex = sqrt_matrix_d.map(|f| c64::new(*f, 0.0));
-
   let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
-
   let sqrt_product = matrix_s.dot(&sqrt_matrix_d).dot(&matrix_s_inv);
   sqrt_product
 }
@@ -170,6 +155,12 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
   let upper_right_block_transpose = upper_right_block.t();
   let lower_left_block_transpose = lower_left_block.t();
 
+  let a = upper_left_block.slice(s! [0..(dim / 2), 0]);
+  let b = upper_right_block_transpose.slice(s! [0..(dim / 2), 0]);
+  let c = stack![Axis(0) , a, b];
+
+
+  println!("a is {}, b is {}, c is {}",a,b, c);
   let mut i = 0;
   for _index_1 in 0..dim/2 {
     let mut j = 0;
