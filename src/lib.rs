@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use ndarray_linalg::*;
 extern crate lazy_static;
 extern crate ndarray;
-use ndarray::{stack, Axis};
+use ndarray::{concatenate, Axis};
 // use lazy_static::lazy_static;
 
 pub use ndarray_linalg::c64;
@@ -15,6 +15,7 @@ pub type MatrixF64 = ndarray::Array2<f64>;
 //TODO: Rust Doc comments in Rust cookbook
 //TODO: Stack/concatenate
 //TODO: Be able to read in csv of numpy arrays
+//TODO: Optimize by using borrowed inputs for functions "&" instead of cloning
 /////////////////////////////////////////////////////////////////////
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
@@ -28,7 +29,7 @@ pub fn create_dens_matrix(coefs: &VecC64) -> MatrixC64 {
   dens_matrix
 }
 
-pub fn find_purity(rho_sqrd: MatrixC64)-> f64 {
+pub fn find_purity(rho_sqrd: &MatrixC64)-> f64 {
   let purity = rho_sqrd.trace().unwrap();
   purity.re
 }
@@ -116,7 +117,7 @@ pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
   let mut j = 0;
   for _ctr in 0..eig_len {
     if eigvals[j] < 0.0 {
-      println!("WARNING: While finding the sqrt of a matrix, the eigenvalue {:.32} was negative, but rounded to 0 and rescaled. \n", eigvals[j]);
+      // println!("WARNING: While finding the sqrt of a matrix, the eigenvalue {:.32} was negative, but rounded to 0 and rescaled. \n", eigvals[j]);
       eigvals[j] = 0.0;
   
       j += 1;
@@ -145,7 +146,6 @@ pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
 pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
 
   let dim = find_dim(matrix.clone()) as usize;
-  let mut partial_transpose_matrix = MatrixC64::zeros((dim , dim).f());
 
   let upper_left_block  = matrix.slice(s! [0..(dim / 2)   , 0..(dim / 2)  ] );
   let upper_right_block = matrix.slice(s! [0..(dim / 2)   , (dim / 2)..dim] );
@@ -155,24 +155,9 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
   let upper_right_block_transpose = upper_right_block.t();
   let lower_left_block_transpose = lower_left_block.t();
 
-  let a = upper_left_block.slice(s! [0..(dim / 2), 0]);
-  let b = upper_right_block_transpose.slice(s! [0..(dim / 2), 0]);
-  let c = stack![Axis(0) , a, b];
-
-
-  println!("a is {}, b is {}, c is {}",a,b, c);
-  let mut i = 0;
-  for _index_1 in 0..dim/2 {
-    let mut j = 0;
-    for _index_2 in 0..dim/2 {
-      partial_transpose_matrix[[i         , j        ]] = upper_left_block[ [i , j] ];
-      partial_transpose_matrix[[i         , j + dim/2]] = upper_right_block_transpose[ [i , j] ];
-      partial_transpose_matrix[[i + dim/2 , j        ]] = lower_left_block_transpose[ [i , j] ];
-      partial_transpose_matrix[[i + dim/2 , j + dim/2]] = lower_right_block[ [i , j] ];
-      j += 1;
-      }
-    i += 1;
-    }
+  let top = concatenate![Axis(1) , upper_left_block, upper_right_block_transpose];
+  let bottom = concatenate![Axis(1) , lower_left_block_transpose, lower_right_block];
+  let partial_transpose_matrix = concatenate![Axis(0) , top, bottom];
 
   partial_transpose_matrix
 

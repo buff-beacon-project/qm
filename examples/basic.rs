@@ -35,7 +35,6 @@ lazy_static!{
 
   pub static ref PSI_PART_ENTANGLED: VecC64 = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(THETA.sin(), 0.0)];
 
-
 }
 
 pub fn main() {
@@ -66,14 +65,14 @@ pub fn test_purity() {
 
   let rho_sqrd_1_qbit = find_matrix_sqrd(RHO_MAX_MIXED_1_QBIT.clone());
   println!("Dens matrix squared is \n {} \n",rho_sqrd_1_qbit);
-  println!("The purity is {} \n", find_purity(rho_sqrd_1_qbit.clone()));
+  println!("The purity is {} \n", find_purity(&rho_sqrd_1_qbit));
   println!("The purity ranges from {} to {} \n", 1./(find_dim(rho_sqrd_1_qbit.clone()) as f64), 1);
 
   println!("Dens matrix for a pure state {}: \n",rho_bell_phi_plus);
   let rho_bell_2 = rho_bell_phi_plus.clone();
   let rho_bell_sqrd = find_matrix_sqrd(rho_bell_2);
   println!("Dens matrix squared is \n {} \n",rho_bell_sqrd);
-  println!("The purity is {} \n", find_purity(rho_bell_sqrd.clone()));
+  println!("The purity is {} \n", find_purity(&rho_bell_sqrd));
   println!("The purity ranges from {} to {}", 1./(find_dim(rho_bell_sqrd.clone()) as f64), 1);
 }
 
