@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use ndarray::prelude::*;
 use ndarray_linalg::*;
 extern crate lazy_static;
@@ -20,17 +21,19 @@ pub type MatrixF64 = ndarray::Array2<f64>;
 ////////////////////Entanglement Calculations////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-pub fn create_dens_matrix(coefs: &VecC64) -> MatrixC64 {
+pub fn create_dens_matrix(qm_state_vector: &VecC64) -> MatrixC64 {
 
-  let coefs_conj = coefs.map(|coefs| coefs.conj());
-  let a = into_col(coefs.clone());
-  let b = into_row(coefs_conj);
+  let qm_state_vector_conj = qm_state_vector.map(|qm_state_vector| qm_state_vector.conj());
+  let a = into_col(qm_state_vector.clone());
+  let b = into_row(qm_state_vector_conj);
   let dens_matrix = a.dot(&b);
   dens_matrix
 }
 
-pub fn find_purity(rho_sqrd: &MatrixC64)-> f64 {
-  let purity = rho_sqrd.trace().unwrap();
+pub fn find_purity(rho: MatrixC64)-> f64 {
+
+  let rho_squared = rho.dot(&rho); 
+  let purity = rho_squared.trace().unwrap();
   purity.re
 }
 
@@ -45,10 +48,12 @@ pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 
 pub fn find_concurrence(rho: MatrixC64) -> f64 {
   
-  let pauli_y = array![ [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
-                        [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
-                        [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
-                        [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ];
+  let pauli_y = array![ 
+    [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
+    [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
+    [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
+    [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] 
+  ];
 
   let rho_star = rho.mapv(|rho| rho.conj());
   let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
@@ -93,11 +98,6 @@ pub fn find_log_negativity(rho: MatrixC64) -> f64 {
 pub fn find_dim(matrix: MatrixC64)-> i32 {
   let shape = matrix.dim();
   shape.1 as i32
-}
-
-pub fn find_matrix_sqrd(matrix: MatrixC64) -> MatrixC64 {
-  let matrix_sqrd = matrix.dot(&matrix); 
-  matrix_sqrd
 }
 
 pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
@@ -161,4 +161,60 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
 
   partial_transpose_matrix
 
+}
+
+pub const C_LIGHT: f64 = 3.0e+8_f64;
+pub const LAMBDA_S: f64 = 1550.0e-9_f64;
+pub const LAMBDA_I: f64 = LAMBDA_S;
+pub const LAMBDA_P: f64 = 775.0e-9_f64;
+pub const THETA: f64 = 51.765*PI/180.;
+
+pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f64) -> (f64, f64, f64) {
+
+  let two_pi_c_dt = 2.*PI*C_LIGHT*dt;
+  let signal_len = signal.len() as i64;
+  let idler_len= idler.len() as i64;
+
+  let mut rate_ss = 0.;
+  let mut rate_ii = 0.;
+  let mut rate_si = 0.;
+  for j in 0..signal_len{
+    let s_j_inv = 1./signal[j as usize];
+
+    for k in 0..idler_len{
+      let a = jsa[[j as usize, k as usize]];
+      let s_k_inv = 1./signal[k as usize];
+
+      for l in 0..signal_len{
+        let c = jsa[[l as usize, k as usize]];
+
+        let i_l_inv = 1./idler[l as usize];
+        let arg_ss = two_pi_c_dt*(s_j_inv - i_l_inv);
+        let phase_ss = c64::new(0. , arg_ss).exp();
+
+        for m in 0..idler_len{
+          let i_m_inv = 1./idler[m as usize];
+
+          let arg_ii = two_pi_c_dt*(s_k_inv - i_m_inv);
+          let phase_ii = c64::new(0. , arg_ii).exp();
+
+          let arg_si = two_pi_c_dt*(s_j_inv - i_m_inv);
+          let phase_si = c64::new(0. , arg_si).exp();
+
+          let b = jsa[ [l as usize, m as usize] ];
+          let d = jsa[ [j as usize, m as usize] ];
+          let arg_1 = a*b;
+          let arg_2 = c*d;
+
+          let intf_ss = (arg_1 - phase_ss*arg_2)*0.5;
+          let intf_ii = (arg_1 - phase_ii*arg_2)*0.5;
+          let intf_si = (arg_1 - phase_si*arg_2)*0.5;
+          rate_ss += (intf_ss*intf_ss).abs();
+          rate_ii += (intf_ii*intf_ii).abs(); 
+          rate_si += (intf_si*intf_si).abs();                   
+        }
+      }
+    }
+  }
+(rate_ss, rate_ii, rate_si)
 }
