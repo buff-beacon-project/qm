@@ -111,28 +111,28 @@ pub const THETA: f64 = 51.765*PI/180.;
 pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f64) -> (f64, f64, f64) {
 
   let two_pi_c_dt = 2.*PI*C_LIGHT*dt;
-  let signal_len = signal.len() as i64;
-  let idler_len= idler.len() as i64;
+  let signal_len = signal.len();
+  let idler_len= idler.len();
 
   let mut rate_ss = 0.;
   let mut rate_ii = 0.;
   let mut rate_si = 0.;
   for j in 0..signal_len{
-    let s_j_inv = 1./signal[j as usize];
+    let s_j_inv = 1./signal[j];
 
     for k in 0..idler_len{
-      let a = jsa[[j as usize, k as usize]];
-      let s_k_inv = 1./signal[k as usize];
+      let a = jsa[[j, k]];
+      let s_k_inv = 1./signal[k];
 
       for l in 0..signal_len{
-        let c = jsa[[l as usize, k as usize]];
+        let c = jsa[[l, k]];
 
-        let i_l_inv = 1./idler[l as usize];
+        let i_l_inv = 1./idler[l];
         let arg_ss = two_pi_c_dt*(s_j_inv - i_l_inv);
         let phase_ss = c64::new(0. , arg_ss).exp();
 
         for m in 0..idler_len{
-          let i_m_inv = 1./idler[m as usize];
+          let i_m_inv = 1./idler[m];
 
           let arg_ii = two_pi_c_dt*(s_k_inv - i_m_inv);
           let phase_ii = c64::new(0. , arg_ii).exp();
@@ -140,8 +140,8 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
           let arg_si = two_pi_c_dt*(s_j_inv - i_m_inv);
           let phase_si = c64::new(0. , arg_si).exp();
 
-          let b = jsa[ [l as usize, m as usize] ];
-          let d = jsa[ [j as usize, m as usize] ];
+          let b = jsa[ [l, m] ];
+          let d = jsa[ [j, m] ];
           let arg_1 = a*b;
           let arg_2 = c*d;
 
@@ -221,12 +221,20 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
 
 }
 
-pub fn find_tensor_product(matrix_a: MatrixC64, matrix_b: MatrixC64) -> MatrixC64 {
+// pub fn find_tensor_product(matrix_a: MatrixC64, matrix_b: MatrixC64) -> f64 {
 
-  let dim = find_dim(matrix_a.clone()) as usize;
+//   let dim = find_dim(matrix_a.clone()) as usize;
+//   let len = dim as i32;
 
-  for i in 0..dim
+//   let initial_block = matrix_b.mapv(|matrix_b| matrix_a[[0,0]]*matrix_b);
+//   let mut partial_row = initial_block; 
+  
+//   for i in 1..len{
+//     println!("{}",partial_row)
+//     let mut new_block = matrix_b.mapv(|matrix_b| (matrix_b)*matrix_a[[0, i as usize]]);
+//     partial_row = concatenate![Axis(1) , partial_row, new_block];
+//   }
 
-
-}
+//   1.1
+// }
 
