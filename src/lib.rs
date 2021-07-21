@@ -91,47 +91,6 @@ pub fn find_log_negativity(rho: MatrixC64) -> f64 {
   (2.*neg + 1.).log2()
 }
 
-/////////////////////////////////////////////////////////////////////
-/////////////////////////Matrix Operations///////////////////////////
-/////////////////////////////////////////////////////////////////////
-
-pub fn find_dim(matrix: MatrixC64)-> i32 {
-  let shape = matrix.dim();
-  shape.1 as i32
-}
-
-pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
-  
-  let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
-  let matrix_s_inv = matrix_s.inv().unwrap();
-  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
-  let sqrt_product = matrix_s.dot(&sqrt_matrix_d).dot(&matrix_s_inv);
-  sqrt_product
-}
-
-pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
-  
-  let (mut eigvals, vecs) = rho.eigh(UPLO::Lower).unwrap();
-  let eig_len = eigvals.len() as i32;
-
-  let mut j = 0;
-  for _ctr in 0..eig_len {
-    if eigvals[j] < 0.0 {
-      // println!("WARNING: While finding the sqrt of a matrix, the eigenvalue {:.32} was negative, but rounded to 0 and rescaled. \n", eigvals[j]);
-      eigvals[j] = 0.0;
-  
-      j += 1;
-    }
-  }
-
-  let eigvals_c64 = eigvals.map(|f| c64::new(*f, 0.0));
-
-  let matrix_d = MatrixC64::from_diag(&eigvals_c64);
-  let matrix_s = vecs;
-
-  (matrix_d, matrix_s)
-}
-
 pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
   let jsa = jsi.mapv(|jsi| jsi.sqrt());
   let (_u, s, _v_transpose) = jsa.svd(true , true).unwrap();
@@ -141,26 +100,6 @@ pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
   let sum_eig_sqrd = renormed_s.mapv(|renormed_s| renormed_s.powf(4.)).sum();
   let k = 1./sum_eig_sqrd;
   k
-}
-
-pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
-
-  let dim = find_dim(matrix.clone()) as usize;
-
-  let upper_left_block  = matrix.slice(s! [0..(dim / 2)   , 0..(dim / 2)  ] );
-  let upper_right_block = matrix.slice(s! [0..(dim / 2)   , (dim / 2)..dim] );
-  let lower_left_block  = matrix.slice(s! [(dim / 2)..dim , 0..(dim / 2)  ] );
-  let lower_right_block = matrix.slice(s! [(dim / 2)..dim , (dim / 2)..dim] );
-
-  let upper_right_block_transpose = upper_right_block.t();
-  let lower_left_block_transpose = lower_left_block.t();
-
-  let top = concatenate![Axis(1) , upper_left_block, upper_right_block_transpose];
-  let bottom = concatenate![Axis(1) , lower_left_block_transpose, lower_right_block];
-  let partial_transpose_matrix = concatenate![Axis(0) , top, bottom];
-
-  partial_transpose_matrix
-
 }
 
 pub const C_LIGHT: f64 = 3.0e+8_f64;
@@ -218,3 +157,76 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
   }
 (rate_ss, rate_ii, rate_si)
 }
+
+/////////////////////////////////////////////////////////////////////
+/////////////////////////Matrix Operations///////////////////////////
+/////////////////////////////////////////////////////////////////////
+
+pub fn find_dim(matrix: MatrixC64)-> i32 {
+  let shape = matrix.dim();
+  shape.1 as i32
+}
+
+pub fn find_sqr_root_of_matrix(matrix: MatrixC64) -> MatrixC64 {
+  
+  let (matrix_d, matrix_s) = rescale_neg_eigvals(matrix);
+  let matrix_s_inv = matrix_s.inv().unwrap();
+  let sqrt_matrix_d = matrix_d.mapv(|matrix_d| (matrix_d).sqrt());
+  let sqrt_product = matrix_s.dot(&sqrt_matrix_d).dot(&matrix_s_inv);
+  sqrt_product
+}
+
+pub fn rescale_neg_eigvals(rho: MatrixC64) -> (MatrixC64, MatrixC64) {
+  
+  let (mut eigvals, vecs) = rho.eigh(UPLO::Lower).unwrap();
+  let eig_len = eigvals.len() as i32;
+
+  let mut j = 0;
+  for _ctr in 0..eig_len {
+    if eigvals[j] < 0.0 {
+      // println!("WARNING: While finding the sqrt of a matrix, the eigenvalue {:.32} was negative, but rounded to 0 and rescaled. \n", eigvals[j]);
+      eigvals[j] = 0.0;
+  
+      j += 1;
+    }
+  }
+
+  let eigvals_c64 = eigvals.map(|f| c64::new(*f, 0.0));
+
+  let matrix_d = MatrixC64::from_diag(&eigvals_c64);
+  let matrix_s = vecs;
+
+  (matrix_d, matrix_s)
+}
+
+
+
+pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
+
+  let dim = find_dim(matrix.clone()) as usize;
+
+  let upper_left_block  = matrix.slice(s! [0..(dim / 2)   , 0..(dim / 2)  ] );
+  let upper_right_block = matrix.slice(s! [0..(dim / 2)   , (dim / 2)..dim] );
+  let lower_left_block  = matrix.slice(s! [(dim / 2)..dim , 0..(dim / 2)  ] );
+  let lower_right_block = matrix.slice(s! [(dim / 2)..dim , (dim / 2)..dim] );
+
+  let upper_right_block_transpose = upper_right_block.t();
+  let lower_left_block_transpose = lower_left_block.t();
+
+  let top = concatenate![Axis(1) , upper_left_block, upper_right_block_transpose];
+  let bottom = concatenate![Axis(1) , lower_left_block_transpose, lower_right_block];
+  let partial_transpose_matrix = concatenate![Axis(0) , top, bottom];
+
+  partial_transpose_matrix
+
+}
+
+pub fn find_tensor_product(matrix_a: MatrixC64, matrix_b: MatrixC64) -> MatrixC64 {
+
+  let dim = find_dim(matrix_a.clone()) as usize;
+
+  for i in 0..dim
+
+
+}
+
