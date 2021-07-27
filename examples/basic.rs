@@ -45,7 +45,7 @@ lazy_static!{
 
 }
 
-pub fn main() -> Result<(), Box<dyn Error>> {
+pub fn main() {
 
   // test_dens_matrix();
   // test_purity();
@@ -53,19 +53,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
   // test_concurrence();
   // test_partial_transpose();
   // test_find_schmidt_number();
+  test_tensor_product()
 
-  let file = File::create("test.csv");
-  let file = match file{
-    Ok(f) => f,
-    Err(e) => return Err(e.into())
-  };
-  let mut writer = WriterBuilder::new().has_headers(false).from_writer(file);
-  writer.serialize_array2(&RHO_MAX_MIXED_2_QBIT)?;
-
-  // dbg!(read_c64_array("JSA_data5.csv".into(), 5));
-
-  // Ok(())
-  Err("Error error".into())
 }
 
 pub fn test_dens_matrix() {
@@ -148,11 +137,32 @@ pub fn test_partial_transpose() {
   println!("{}", find_partial_transpose(test_matrix))
 }
 
-// pub fn test_find_schmidt_number () {
+pub fn test_find_schmidt_number () {
 
-//   let jsi = read_c64_array("JSA_data5.csv".to_string(),5).unwrap();
-//   println!("{}",find_schmidt_number(jsi));
-// }
+  let jsi = read_f64_array("JSI_data200.csv".to_string(),200).unwrap();
+  println!("{}",find_schmidt_number(jsi));
+}
+
+pub fn test_tensor_product() {
+
+  let test_matrix_a: MatrixC64 = array![ 
+    [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0) ] ,
+    [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+  ];
+
+  let test_matrix_b: MatrixC64 = array![ 
+    [c64::new(1.0 , 1.0)  , c64::new(2.0 , 1.0) ] ,
+    [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+  ];
+
+  let pauli_y_spin: MatrixC64 = array![ 
+    [c64::new(0.0 , 0.0)  , c64::new(0.0 , -1.0) ] ,
+    [c64::new(0.0 , 1.0)  , c64::new(0.0 , 0.0)  ] ,
+  ];
+  println!("{}", find_tensor_product(test_matrix_a, test_matrix_b));
+  println!("{}", find_tensor_product(pauli_y_spin.clone(), pauli_y_spin.clone()));
+}
+
 
 pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, Box<dyn Error>> {
 
@@ -163,12 +173,4 @@ pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, 
     Ok(array_read)
 }
 
-pub fn read_c64_array(csv_file: String, array_size: usize) -> Result<MatrixC64, Box<dyn Error>> {
-
-    let file = File::open(csv_file)?;
-    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
-    let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
-    println!("{}",array_read);
-    Ok(array_read)
-}
 

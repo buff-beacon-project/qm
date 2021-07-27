@@ -107,10 +107,11 @@ pub const LAMBDA_S: f64 = 1550.0e-9_f64;
 pub const LAMBDA_I: f64 = LAMBDA_S;
 pub const LAMBDA_P: f64 = 775.0e-9_f64;
 pub const THETA: f64 = 51.765*PI/180.;
+pub const DT: f64 = 1.0e-15_f64;
 
 pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f64) -> (f64, f64, f64) {
 
-  let two_pi_c_dt = 2.*PI*C_LIGHT*dt;
+  let two_pi_c_dt = 2.*PI*C_LIGHT*DT;
   let signal_len = signal.len();
   let idler_len= idler.len();
 
@@ -127,7 +128,7 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
       for l in 0..signal_len{
         let c = jsa[[l, k]];
 
-        let i_l_inv = 1./idler[l];
+        let i_l_inv = 1./idler[l]; 
         let arg_ss = two_pi_c_dt*(s_j_inv - i_l_inv);
         let phase_ss = c64::new(0. , arg_ss).exp();
 
@@ -221,20 +222,37 @@ pub fn find_partial_transpose(matrix: MatrixC64) -> MatrixC64 {
 
 }
 
-// pub fn find_tensor_product(matrix_a: MatrixC64, matrix_b: MatrixC64) -> f64 {
+pub fn find_tensor_product(matrix_a: MatrixC64, matrix_b: MatrixC64) -> MatrixC64 {
 
-//   let dim = find_dim(matrix_a.clone()) as usize;
-//   let len = dim as i32;
+  let dim = find_dim(matrix_a.clone()) as usize;
+  let len = dim as i32;
 
-//   let initial_block = matrix_b.mapv(|matrix_b| matrix_a[[0,0]]*matrix_b);
-//   let mut partial_row = initial_block; 
+  let first_block = matrix_b.mapv(|matrix_b| matrix_a[[0,0]]*matrix_b);
+  let mut row_block = first_block; 
   
-//   for i in 1..len{
-//     println!("{}",partial_row)
-//     let mut new_block = matrix_b.mapv(|matrix_b| (matrix_b)*matrix_a[[0, i as usize]]);
-//     partial_row = concatenate![Axis(1) , partial_row, new_block];
-//   }
+  for j in 1..len{
+    let new_block = matrix_b.mapv(|matrix_b| (matrix_b)*matrix_a[[0, j as usize]]);
+    row_block = concatenate![Axis(1) , row_block, new_block];
+  }
 
-//   1.1
-// }
+  let top = row_block;
+  let mut tensor_product = top;
+  
+  for i in 1..len{
+
+    let first_block = matrix_b.mapv(|matrix_b| matrix_a[[i as usize,0]]*matrix_b);
+    let mut row_block = first_block; 
+  
+    for j in 1..len{
+      let new_block = matrix_b.mapv(|matrix_b| (matrix_b)*matrix_a[[i as usize, j as usize]]);
+      row_block = concatenate![Axis(1) , row_block, new_block];
+      }
+
+    let new = row_block;
+    tensor_product = concatenate![Axis(0) , tensor_product, new];
+  }
+
+  tensor_product
+
+}
 
