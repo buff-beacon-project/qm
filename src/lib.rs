@@ -4,13 +4,14 @@ use ndarray_linalg::*;
 extern crate lazy_static;
 extern crate ndarray;
 use ndarray::{concatenate, Axis};
-// use lazy_static::lazy_static;
+use lazy_static::lazy_static;
 
 pub use ndarray_linalg::c64;
 pub type VecC64 = ndarray::Array1<c64>;
 pub type VecF64 = ndarray::Array1<f64>;
 pub type MatrixC64 = ndarray::Array2<c64>;
 pub type MatrixF64 = ndarray::Array2<f64>;
+
 
 //TODO: Create a module of these comments
 //TODO: Rust Doc comments in Rust cookbook
@@ -47,17 +48,17 @@ pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
 }
 
 pub fn find_concurrence(rho: MatrixC64) -> f64 {
-  
-  let pauli_y = array![ 
-    [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(-1. , 0.)  ] , 
-    [  c64::new(0. , 0.)  ,  c64::new(0. , 0.) , c64::new(1. , 0.) ,  c64::new(0. , 0.)   ] ,
-    [  c64::new(0. , 0.)  ,  c64::new(1. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] ,
-    [  c64::new(-1. , 0.) ,  c64::new(0. , 0.) , c64::new(0. , 0.) ,  c64::new(0. , 0.)   ] 
+
+  let pauli_y: MatrixC64 = array![ 
+    [c64::new(0.0 , 0.0) , c64::new(0.0 , -1.0)] ,
+    [c64::new(0.0 , 1.0) , c64::new(0.0 , 0.0)] 
   ];
+
+  let pauli_y_tensor = find_tensor_product(pauli_y.clone() , pauli_y.clone());
 
   let rho_star = rho.mapv(|rho| rho.conj());
   let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
-  let rho_tilde = pauli_y.dot(&rho_star).dot(&pauli_y);
+  let rho_tilde = pauli_y_tensor.dot(&rho_star).dot(&pauli_y_tensor);
 
   let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
   let sqrt_product = find_sqr_root_of_matrix(product);
@@ -102,16 +103,9 @@ pub fn find_schmidt_number(jsi: MatrixF64) -> f64 {
   k
 }
 
-pub const C_LIGHT: f64 = 3.0e+8_f64;
-pub const LAMBDA_S: f64 = 1550.0e-9_f64;
-pub const LAMBDA_I: f64 = LAMBDA_S;
-pub const LAMBDA_P: f64 = 775.0e-9_f64;
-pub const THETA: f64 = 51.765*PI/180.;
-pub const DT: f64 = 1.0e-15_f64;
-
 pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f64) -> (f64, f64, f64) {
 
-  let two_pi_c_dt = 2.*PI*C_LIGHT*DT;
+  let two_pi_c_dt = 2.*PI*3.0e+8_f64*dt;
   let signal_len = signal.len();
   let idler_len= idler.len();
 
@@ -149,9 +143,9 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
           let intf_ss = (arg_1 - phase_ss*arg_2)*0.5;
           let intf_ii = (arg_1 - phase_ii*arg_2)*0.5;
           let intf_si = (arg_1 - phase_si*arg_2)*0.5;
-          rate_ss += (intf_ss*intf_ss).abs();
-          rate_ii += (intf_ii*intf_ii).abs(); 
-          rate_si += (intf_si*intf_si).abs();                   
+          rate_ss += (intf_ss.abs())*(intf_ss.abs());
+          rate_ii += (intf_ii.abs())*(intf_ii.abs()); 
+          rate_si += (intf_si.abs())*(intf_si.abs());                   
         }
       }
     }
