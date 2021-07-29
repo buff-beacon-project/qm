@@ -55,6 +55,16 @@ pub fn main() {
   // test_find_schmidt_number();
   test_tensor_product()
 
+  // let signal: VecF64 = array![1.4446824684143E-06,1.49734123420715E-06,1.54999999999999E-06,1.60265876579284E-06,1.65531753158569E-06];
+  // let idler: VecF64 = array![1.45728222027807E-06,1.51093173528974E-06,1.56458125030141E-06,1.61823076531308E-06,1.67188028032476E-06];
+  // let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string(),5).unwrap();
+  // let dt = 1.0e+06_f64;
+
+  // println!("signal = {}", signal);
+  // println!("idler = {}", idler);  
+  // println!("jsa = {}",jsa);
+  // println!("dt = {}", dt );
+  // println!("{:?}",find_two_source_hom(signal.clone(), idler.clone(), jsa.clone(), dt))
 }
 
 pub fn test_dens_matrix() {
@@ -102,29 +112,29 @@ pub fn test_fidelity() {
   println!("Fidelity of cos({:.4})|00> + sin({:.4})|11> is {}", THETA, THETA, find_fidelity(rho_part_entangled.clone(), rho_part_entangled.clone()));   
 }
 
-pub fn test_concurrence() {
+// pub fn test_concurrence() {
 
-  let rho_max_mixed_2_qbit: MatrixC64 = array![ 
-    [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ],
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ],
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ],
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] 
-  ];
+//   let rho_max_mixed_2_qbit: MatrixC64 = array![ 
+//     [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ],
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0) ],
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0) ],
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] 
+//   ];
 
-  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
-  let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
-  let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
-  let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);
-  let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
+//   let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
+//   let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
+//   let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
+//   let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);
+//   let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
 
-  println!("Concurrence of phi_+ is {}", find_concurrence(rho_bell_phi_plus));
-  println!("Concurrence of phi_- is {}", find_concurrence(rho_bell_phi_minus));
-  println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
-  println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
+//   println!("Concurrence of phi_+ is {}", find_concurrence(rho_bell_phi_plus));
+//   println!("Concurrence of phi_- is {}", find_concurrence(rho_bell_phi_minus));
+//   println!("Concurrence of psi_+ is {}", find_concurrence(rho_bell_psi_plus));
+//   println!("Concurrence of psi_- is {}", find_concurrence(rho_bell_psi_minus));
 
-  println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
-  println!("Concurrence of cos({:.4})|00> + sin({:.4})|11> is {}", THETA, THETA,find_concurrence(rho_part_entangled));  
-}
+//   println!("Concurrence of mixed state is {}", find_concurrence(rho_max_mixed_2_qbit));
+//   println!("Concurrence of cos({:.4})|00> + sin({:.4})|11> is {}", THETA, THETA,find_concurrence(rho_part_entangled));  
+// }
 
 pub fn test_partial_transpose() {
 
@@ -145,22 +155,40 @@ pub fn test_find_schmidt_number () {
 
 pub fn test_tensor_product() {
 
-  let test_matrix_a: MatrixC64 = array![ 
-    [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0) ] ,
-    [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+  let rho_max_mixed_2_qbit: MatrixC64 = array![ 
+    [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)], 
+    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.25 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)  , c64::new(0.0 , 0.0)],
+    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)]
+
   ];
 
-  let test_matrix_b: MatrixC64 = array![ 
-    [c64::new(1.0 , 1.0)  , c64::new(2.0 , 1.0) ] ,
-    [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
-  ];
+  // let test_matrix_a: MatrixC64 = array![ 
+  //   [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0) ] ,
+  //   [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+  // ];
 
-  let pauli_y_spin: MatrixC64 = array![ 
-    [c64::new(0.0 , 0.0)  , c64::new(0.0 , -1.0) ] ,
-    [c64::new(0.0 , 1.0)  , c64::new(0.0 , 0.0)  ] ,
-  ];
-  println!("{}", find_tensor_product(test_matrix_a, test_matrix_b));
-  println!("{}", find_tensor_product(pauli_y_spin.clone(), pauli_y_spin.clone()));
+  // let test_matrix_b: MatrixC64 = array![ 
+  //   [c64::new(1.0 , 1.0)  , c64::new(2.0 , 1.0) ] ,
+  //   [c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+  // ];
+
+  // let pauli_y_spin: MatrixC64 = array![ 
+  //   [c64::new(0.0 , 0.0)  , c64::new(0.0 , -1.0) ] ,
+  //   [c64::new(0.0 , 1.0)  , c64::new(0.0 , 0.0)  ] ,
+  // ];
+
+  // println!("{}", find_tensor_product(test_matrix_a, test_matrix_b));
+
+  // let tensor_two_pauli = find_tensor_product(pauli_y_spin.clone(), pauli_y_spin.clone());
+
+  // println!("{}", find_tensor_product(pauli_y_spin.clone(), pauli_y_spin.clone()));
+
+  println!("{}", find_concurrence(rho_max_mixed_2_qbit));
 }
 
 
@@ -173,4 +201,25 @@ pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, 
     Ok(array_read)
 }
 
+pub fn read_c64_array(csv_file: String, array_size: usize) -> Result<MatrixC64, Box<dyn Error>> {
 
+    let file = File::open(csv_file)?;
+    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+    let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
+    Ok(array_read)
+}
+
+pub fn read_f64_vector(csv_file: String) -> Result<VecF64, Box<dyn Error>> {
+
+    let file = File::open(csv_file)?;
+    let mut reader = ReaderBuilder::new()
+        .from_reader(file);
+
+    let v : Vec<f64> = reader.headers()?
+        .into_iter()
+        .map(|s| s.parse::<f64>().unwrap()) // to f64
+        .collect(); // create a vec      
+    
+    let arr = Array::from(v);
+    Ok(arr)
+}

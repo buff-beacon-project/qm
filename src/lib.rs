@@ -39,10 +39,10 @@ pub fn find_purity(rho: MatrixC64)-> f64 {
 }
 
 
-pub fn find_fidelity(rho: MatrixC64, sigma: MatrixC64) -> f64 {
+pub fn find_fidelity(rho_1: MatrixC64, rho_2: MatrixC64) -> f64 {
 
-  let sqrt_rho = find_sqr_root_of_matrix(rho);
-  let product = sqrt_rho.dot(&sigma).dot(&sqrt_rho);
+  let sqrt_rho_1 = find_sqr_root_of_matrix(rho_1);
+  let product = sqrt_rho_1.dot(&rho_2).dot(&sqrt_rho_1);
   let sqrt_product = find_sqr_root_of_matrix(product);
   (sqrt_product.trace().unwrap()).re
 }
@@ -54,11 +54,16 @@ pub fn find_concurrence(rho: MatrixC64) -> f64 {
     [c64::new(0.0 , 1.0) , c64::new(0.0 , 0.0)] 
   ];
 
-  let pauli_y_tensor = find_tensor_product(pauli_y.clone() , pauli_y.clone());
+  let dim = find_dim(rho.clone()) as f64;
+  let n_qubits = dim.log2() as i32;
+
+  let pauli_y_product = (1..n_qubits).fold(pauli_y.clone(), |prev, _i|{
+                          find_tensor_product(prev, pauli_y.clone())
+                        });
 
   let rho_star = rho.mapv(|rho| rho.conj());
   let sqrt_rho = find_sqr_root_of_matrix(rho.clone());
-  let rho_tilde = pauli_y_tensor.dot(&rho_star).dot(&pauli_y_tensor);
+  let rho_tilde = pauli_y_product.dot(&rho_star).dot(&pauli_y_product);
 
   let product = sqrt_rho.dot(&rho_tilde).dot(&sqrt_rho);
   let sqrt_product = find_sqr_root_of_matrix(product);
@@ -66,7 +71,15 @@ pub fn find_concurrence(rho: MatrixC64) -> f64 {
   let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
   let mut eigvals = eigvals.to_vec();
   eigvals.sort_by(|a, b| a.partial_cmp(b).unwrap());
-  0_f64.max(eigvals[3] - eigvals[2] - eigvals[1] - eigvals[0])
+  
+  println!("eigvals = {:?}", eigvals);
+
+  let eigval_sum = (0..dim as i32 - 2).fold(eigvals[0], |prev, i|{
+                          eigvals[i as usize] + prev
+                        });
+
+  println!("eigval sum = {}", eigval_sum);
+  0_f64.max(eigvals[dim as usize - 1] - eigval_sum)
 }
 
 pub fn find_negativity(rho: MatrixC64) -> f64 {
@@ -124,28 +137,28 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
 
         let i_l_inv = 1./idler[l]; 
         let arg_ss = two_pi_c_dt*(s_j_inv - i_l_inv);
-        let phase_ss = c64::new(0. , arg_ss).exp();
-
+        let phase_ss = ( c64::new(0. , 1.0) * c64::from(arg_ss) ).exp(); 
         for m in 0..idler_len{
           let i_m_inv = 1./idler[m];
 
           let arg_ii = two_pi_c_dt*(s_k_inv - i_m_inv);
-          let phase_ii = c64::new(0. , arg_ii).exp();
+          let phase_ii = ( c64::new(0. , 1.0) * c64::from(arg_ii) ).exp(); 
 
           let arg_si = two_pi_c_dt*(s_j_inv - i_m_inv);
-          let phase_si = c64::new(0. , arg_si).exp();
+          let phase_si = ( c64::new(0. , 1.0) * c64::from(arg_si) ).exp(); 
+
 
           let b = jsa[ [l, m] ];
           let d = jsa[ [j, m] ];
           let arg_1 = a*b;
           let arg_2 = c*d;
 
-          let intf_ss = (arg_1 - phase_ss*arg_2)*0.5;
-          let intf_ii = (arg_1 - phase_ii*arg_2)*0.5;
-          let intf_si = (arg_1 - phase_si*arg_2)*0.5;
-          rate_ss += (intf_ss.abs())*(intf_ss.abs());
-          rate_ii += (intf_ii.abs())*(intf_ii.abs()); 
-          rate_si += (intf_si.abs())*(intf_si.abs());                   
+          let intf_ss = 0.5*(arg_1 - phase_ss*arg_2);
+          let intf_ii = 0.5*(arg_1 - phase_ii*arg_2);
+          let intf_si = 0.5*(arg_1 - phase_si*arg_2);
+          rate_ss += intf_ss.norm_sqr();
+          rate_ii += intf_ii.norm_sqr(); 
+          rate_si += intf_si.norm_sqr();                   
         }
       }
     }
