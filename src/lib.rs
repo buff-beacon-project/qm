@@ -71,14 +71,11 @@ pub fn find_concurrence(rho: MatrixC64) -> f64 {
   let (eigvals, _eigvecs) = sqrt_product.eigh(UPLO::Lower).unwrap();
   let mut eigvals = eigvals.to_vec();
   eigvals.sort_by(|a, b| a.partial_cmp(b).unwrap());
-  
-  println!("eigvals = {:?}", eigvals);
 
   let eigval_sum = (1..dim as i32 - 1).fold(eigvals[0], |prev, i|{
                           eigvals[i as usize] + prev
                         });
 
-  println!("eigval sum = {}", eigval_sum);
   0_f64.max(eigvals[dim as usize - 1] - eigval_sum)
 }
 
