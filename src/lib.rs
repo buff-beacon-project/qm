@@ -74,7 +74,7 @@ pub fn find_concurrence(rho: MatrixC64) -> f64 {
   
   println!("eigvals = {:?}", eigvals);
 
-  let eigval_sum = (0..dim as i32 - 2).fold(eigvals[0], |prev, i|{
+  let eigval_sum = (1..dim as i32 - 1).fold(eigvals[0], |prev, i|{
                           eigvals[i as usize] + prev
                         });
 

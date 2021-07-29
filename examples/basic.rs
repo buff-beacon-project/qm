@@ -10,8 +10,8 @@ extern crate csv;
 extern crate ndarray;
 extern crate ndarray_csv;
 
-use csv::{ReaderBuilder, WriterBuilder};
-use ndarray_csv::{Array2Reader, Array2Writer};
+use csv::{ReaderBuilder};
+use ndarray_csv::{Array2Reader};
 use std::error::Error;
 use std::fs::File;
 
@@ -53,7 +53,7 @@ pub fn main() {
   // test_concurrence();
   // test_partial_transpose();
   // test_find_schmidt_number();
-  test_tensor_product()
+  // test_tensor_product()
 
   // let signal: VecF64 = array![1.4446824684143E-06,1.49734123420715E-06,1.54999999999999E-06,1.60265876579284E-06,1.65531753158569E-06];
   // let idler: VecF64 = array![1.45728222027807E-06,1.51093173528974E-06,1.56458125030141E-06,1.61823076531308E-06,1.67188028032476E-06];
@@ -65,6 +65,17 @@ pub fn main() {
   // println!("jsa = {}",jsa);
   // println!("dt = {}", dt );
   // println!("{:?}",find_two_source_hom(signal.clone(), idler.clone(), jsa.clone(), dt))
+
+  let test = array![1., 2., 3., 4., 5., 6., 7., 8.];
+
+  let dim = test.len();
+  let eigval_sum = (1.. dim - 1).fold(test[0], |prev, i|{
+                          test[i as usize] + prev
+                        });
+
+  println!("eigval sum = {}", eigval_sum);
+  0_f64.max(test[dim as usize -1] - eigval_sum);  
+  println!("dim - 1 = {}", test[dim as usize - 1]);
 }
 
 pub fn test_dens_matrix() {
@@ -153,19 +164,19 @@ pub fn test_find_schmidt_number () {
   println!("{}",find_schmidt_number(jsi));
 }
 
-pub fn test_tensor_product() {
+// pub fn test_tensor_product() {
 
-  let rho_max_mixed_2_qbit: MatrixC64 = array![ 
-    [c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)], 
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0) , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.25 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.25 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)  , c64::new(0.0 , 0.0)],
-    [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)]
+//   let rho_max_mixed_2_qbit: MatrixC64 = array![ 
+//     [c64::new(0.125 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.125 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)], 
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.125 , 0.0) , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.125 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.125 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.125 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.125 , 0.0)  , c64::new(0.0 , 0.0)],
+//     [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.125 , 0.0)]
 
-  ];
+//   ];
 
   // let test_matrix_a: MatrixC64 = array![ 
   //   [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0) ] ,
@@ -188,8 +199,8 @@ pub fn test_tensor_product() {
 
   // println!("{}", find_tensor_product(pauli_y_spin.clone(), pauli_y_spin.clone()));
 
-  println!("{}", find_concurrence(rho_max_mixed_2_qbit));
-}
+  // println!("{}", find_concurrence(rho_max_mixed_2_qbit));
+// }
 
 
 pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, Box<dyn Error>> {
