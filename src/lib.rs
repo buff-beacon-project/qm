@@ -163,6 +163,28 @@ pub fn find_two_source_hom(signal: VecF64, idler: VecF64, jsa: MatrixC64, dt: f6
 (rate_ss, rate_ii, rate_si)
 }
 
+pub fn two_source_hom_norm(signal: VecF64, idler: VecF64, jsa: MatrixC64)-> f64 {
+    let mut rate = 0.;
+    for j in 0..signal.len(){
+        
+        for k in 0..idler.len(){
+            let a = jsa[[j,k]];
+            
+            for l in 0..signal.len(){
+                
+                for m in 0..idler.len(){
+                    let b = jsa[[l,m]];
+                    
+                    let arg1 = a*b;
+                    
+                    rate += arg1.norm_sqr();
+                }
+            }
+        }
+    }
+    rate
+}
+
 /////////////////////////////////////////////////////////////////////
 /////////////////////////Matrix Operations///////////////////////////
 /////////////////////////////////////////////////////////////////////
