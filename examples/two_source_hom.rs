@@ -20,7 +20,7 @@ pub fn main() {
 	let idler = read_f64_vector("idler_data200.csv".to_string()).unwrap();
 	let jsa = read_c64_array("jsa_data200.csv".to_string(),200).unwrap();
 	let dt = 1.0e+06_f64;
-	let norm = find_two_source_hom(signal, idler, jsa, dt);
+	let norm = find_two_source_hom(&signal, &idler, &jsa, dt);
 	dbg!(norm);
 }
 
