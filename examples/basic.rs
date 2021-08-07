@@ -56,7 +56,7 @@ pub fn main() {
   // test_find_schmidt_number();
   // test_tensor_product();
 
-  println!("{}",create_dens_matrix(&TEST_VEC));
+  println!("{}",create_density_matrix(&TEST_VEC));
   let signal: VecF64 = array![1.4446824684143E-06,1.49734123420715E-06,1.54999999999999E-06,1.60265876579284E-06,1.65531753158569E-06];
   let idler: VecF64 = array![1.45728222027807E-06,1.51093173528974E-06,1.56458125030141E-06,1.61823076531308E-06,1.67188028032476E-06];
   let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string(),5).unwrap();
@@ -68,24 +68,24 @@ pub fn main() {
   println!("dt = {}", dt );
   println!("{:?}",find_two_source_hom(&signal, &idler, &jsa, dt));
 
-  let test = array![1., 2., 3., 4., 5., 6., 7., 8.];
+  // let test = array![1., 2., 3., 4., 5., 6., 7., 8.];
 
-  let dim = test.len();
-  let eigval_sum = (1.. dim - 1).fold(test[0], |prev, i|{
-                          test[i as usize] + prev
-                        });
+  // let dim = test.len();
+  // let eigval_sum = (1.. dim - 1).fold(test[0], |prev, i|{
+  //                         test[i as usize] + prev
+  //                       });
 
-  println!("eigval sum = {}", eigval_sum);
-  0_f64.max(test[dim as usize -1] - eigval_sum);  
-  println!("dim - 1 = {}", test[dim as usize - 1]);
+  // println!("eigval sum = {}", eigval_sum);
+  // 0_f64.max(test[dim as usize -1] - eigval_sum);  
+  // println!("dim - 1 = {}", test[dim as usize - 1]);
 }
 
 pub fn test_dens_matrix() {
 
-  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
-  let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
-  let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
-  let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);
+  let rho_bell_phi_plus = create_density_matrix(&BELL_PHI_PLUS_VEC);
+  let rho_bell_phi_minus = create_density_matrix(&BELL_PHI_MINUS_VEC);
+  let rho_bell_psi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);
+  let rho_bell_psi_minus = create_density_matrix(&BELL_PSI_MINUS_VEC);
 
   println!("dens matrix for phi_+ = \n {} \n", rho_bell_phi_plus);
   println!("dens matrix for phi_- = \n {} \n", rho_bell_phi_minus);
@@ -98,7 +98,7 @@ pub fn test_purity() {
   let rho_max_mixed_1_qbit: MatrixC64 = array![ [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
                                                 [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] ];
 
-  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
+  let rho_bell_phi_plus = create_density_matrix(&BELL_PHI_PLUS_VEC);
 
   println!("The purity is {} \n", find_purity(rho_max_mixed_1_qbit.clone()));
   println!("The purity ranges from {} to {} \n", 1./(find_dim(&rho_max_mixed_1_qbit) as f64), 1);
@@ -108,21 +108,21 @@ pub fn test_purity() {
 
 pub fn test_fidelity() {
 
-  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
-  let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
-  let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
-  let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);
-  let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
+  let rho_bell_phi_plus = create_density_matrix(&BELL_PHI_PLUS_VEC);
+  let rho_bell_phi_minus = create_density_matrix(&BELL_PHI_MINUS_VEC);
+  let rho_bell_psi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);
+  let rho_bell_psi_minus = create_density_matrix(&BELL_PSI_MINUS_VEC);
+  let rho_part_entangled = create_density_matrix(&PSI_PART_ENTANGLED);
 
-  println!("The fidelity for a maximally mixed state with itself is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),RHO_MAX_MIXED_2_QBIT.clone()));
-  println!("The fidelity for a maximally mixed state with phi_+ is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_phi_plus.clone()));
-  println!("The fidelity for a maximally mixed state with phi_- is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_phi_minus.clone()));  
-  println!("The fidelity for a maximally mixed state with psi_+  is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_psi_plus.clone()));  
-  println!("The fidelity for a maximally mixed state with psi_-  is {} \n",find_fidelity(RHO_MAX_MIXED_2_QBIT.clone(),rho_bell_psi_minus.clone()));  
+  println!("The fidelity for a maximally mixed state with itself is {} \n",find_fidelity(&RHO_MAX_MIXED_2_QBIT,&RHO_MAX_MIXED_2_QBIT));
+  println!("The fidelity for a maximally mixed state with phi_+ is {} \n",find_fidelity(&RHO_MAX_MIXED_2_QBIT,&rho_bell_phi_plus));
+  println!("The fidelity for a maximally mixed state with phi_- is {} \n",find_fidelity(&RHO_MAX_MIXED_2_QBIT,&rho_bell_phi_minus));  
+  println!("The fidelity for a maximally mixed state with psi_+  is {} \n",find_fidelity(&RHO_MAX_MIXED_2_QBIT,&rho_bell_psi_plus));  
+  println!("The fidelity for a maximally mixed state with psi_-  is {} \n",find_fidelity(&RHO_MAX_MIXED_2_QBIT,&rho_bell_psi_minus));  
 
-  println!("The fidelity for psi_- with psi_-  is {} \n",find_fidelity(rho_bell_psi_minus.clone(),rho_bell_psi_minus.clone()));
-  println!("The fidelity for psi_+ with psi_-  is {} \n",find_fidelity(rho_bell_psi_plus.clone(),rho_bell_psi_minus.clone()));   
-  println!("Fidelity of cos({:.4})|00> + sin({:.4})|11> is {}", THETA, THETA, find_fidelity(rho_part_entangled.clone(), rho_part_entangled.clone()));   
+  println!("The fidelity for psi_- with psi_-  is {} \n",find_fidelity(&rho_bell_psi_minus,&rho_bell_psi_minus));
+  println!("The fidelity for psi_+ with psi_-  is {} \n",find_fidelity(&rho_bell_psi_plus,&rho_bell_psi_minus));   
+  println!("Fidelity of cos({:.4})|00> + sin({:.4})|11> is {}", THETA, THETA, find_fidelity(&rho_part_entangled, &rho_part_entangled));   
 }
 
 pub fn test_concurrence() {
@@ -134,11 +134,11 @@ pub fn test_concurrence() {
     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.25 , 0.0)] 
   ];
 
-  let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
-  let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
-  let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
-  let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);
-  let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
+  let rho_bell_phi_plus = create_density_matrix(&BELL_PHI_PLUS_VEC);
+  let rho_bell_phi_minus = create_density_matrix(&BELL_PHI_MINUS_VEC);
+  let rho_bell_psi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);
+  let rho_bell_psi_minus = create_density_matrix(&BELL_PSI_MINUS_VEC);
+  let rho_part_entangled = create_density_matrix(&PSI_PART_ENTANGLED);
 
   println!("Concurrence of phi_+ is {}", find_concurrence(&rho_bell_phi_plus));
   println!("Concurrence of phi_- is {}", find_concurrence(&rho_bell_phi_minus));
@@ -168,7 +168,7 @@ pub fn test_find_schmidt_number () {
 
 pub fn test_tensor_product() {
 
-  let rho_max_mixed_2_qbit: MatrixC64 = array![ 
+  let rho_max_mixed_3_qbit: MatrixC64 = array![ 
     [c64::new(0.125 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
     [c64::new(0.0 , 0.0)  ,  c64::new(0.125 , 0.0) , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)], 
     [c64::new(0.0 , 0.0)  ,  c64::new(0.0 , 0.0)  , c64::new(0.125 , 0.0) , c64::new(0.0 , 0.0), c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)  , c64::new(0.0 , 0.0)],
@@ -197,7 +197,7 @@ pub fn test_tensor_product() {
 
   println!("{}", find_tensor_product(&test_matrix_a, &test_matrix_b));
   println!("{}", find_tensor_product(&pauli_y_spin, &pauli_y_spin));
-  println!("{}", find_concurrence(&rho_max_mixed_2_qbit));
+  println!("{}", find_concurrence(&rho_max_mixed_3_qbit));
 }
 
 pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, Box<dyn Error>> {

@@ -1,10 +1,11 @@
+#![crate_name = "qm"]
+
 use std::f64::consts::PI;
 use ndarray::prelude::*;
-use ndarray_linalg::*;
+use ndarray_linalg::{into_col, into_row, Trace, Eigh, UPLO, SVD, Inverse};
 extern crate lazy_static;
 extern crate ndarray;
 use ndarray::{concatenate, Axis};
-use lazy_static::lazy_static;
 
 pub use ndarray_linalg::c64;
 pub type VecC64 = ndarray::Array1<c64>;
@@ -12,23 +13,54 @@ pub type VecF64 = ndarray::Array1<f64>;
 pub type MatrixC64 = ndarray::Array2<c64>;
 pub type MatrixF64 = ndarray::Array2<f64>;
 
-//TODO: Create a module of these comments
-//TODO: Rust Doc comments in Rust cookbook
-//TODO: Optimize by using borrowed inputs for functions "&" instead of cloning - Done but needs check
-//TODO: Optimize by using iterators instead of loops?
+/// Creates the density matrix from a state column vector.
+/// 
+/// Takes the outer product of the qm state vector (ket) times the conjugate transpose of the state vector (bra).
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::create_density_matrix;
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+///
+/// let qm_vec: VecC64 = array!
+///   [c64::new(0.0, 0.0), c64::new(0.5, 0.5), c64::new(0.5, -0.5)];
+///
+/// let density_matrix = create_density_matrix(&qm_vec);
+///
+/// ```
 
-/////////////////////////////////////////////////////////////////////
-////////////////////Entanglement Calculations////////////////////////
-/////////////////////////////////////////////////////////////////////
-
-pub fn create_dens_matrix(qm_state_vector: &VecC64) -> MatrixC64 {
+pub fn create_density_matrix(qm_state_vector: &VecC64) -> MatrixC64 {
 
   let qm_state_vector_conj = qm_state_vector.map(|qm_state_vector| qm_state_vector.conj());
   let a = into_col(qm_state_vector.clone());
   let b = into_row(qm_state_vector_conj);
-  let dens_matrix = a.dot(&b);
-  dens_matrix
+  let density_matrix = a.dot(&b);
+  density_matrix
 }
+
+/// Computes the purity of a density matrix by taking the trace of the density matrix squared.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_dim, find_purity};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let bell_state_phi_plus = array![ c64::new(NORM_CONST , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(NORM_CONST , 0.0) ];
+/// let rho = create_density_matrix(&bell_state_phi_plus);
+/// let purity = find_purity(rho.clone());
+///
+/// let dim = find_dim(&rho);
+///
+/// println!("The purity is {} \n", purity);
+/// println!("The purity ranges from {} to {} \n", 1./(dim as f64), 1)
+/// ```
 
 pub fn find_purity(rho: MatrixC64)-> f64 {
 
@@ -37,14 +69,54 @@ pub fn find_purity(rho: MatrixC64)-> f64 {
   purity.re
 }
 
+/// Computes the fidelity between two density matrices. 
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_fidelity};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let bell_state_phi_minus = array![ c64::new(NORM_CONST , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(-NORM_CONST , 0.0) ];
+/// let rho_1 = create_density_matrix(&bell_state_phi_minus);
+///
+/// let diag: VecC64 = Array::from_elem( 4, c64::new(1./4., 0.0) );
+/// let rho_2: MatrixC64 = MatrixC64::from_diag(&diag);
+/// 
+/// let fidelity = find_fidelity(&rho_1, &rho_2);
+/// ```
 
-pub fn find_fidelity(rho_1: MatrixC64, rho_2: MatrixC64) -> f64 {
+pub fn find_fidelity(rho_1: &MatrixC64, rho_2: &MatrixC64) -> f64 {
 
   let sqrt_rho_1 = find_symmetric_square_root(&rho_1);
-  let product = sqrt_rho_1.dot(&rho_2).dot(&sqrt_rho_1);
+  let product = sqrt_rho_1.dot(&rho_2.clone()).dot(&sqrt_rho_1);
   let sqrt_product = find_symmetric_square_root(&product);
   (sqrt_product.trace().unwrap()).re
 }
+
+/// Computes the concurrence of a density matrix. Note that this has been extended for 
+/// any number of qubits, but the computation will return zero for any odd number of 
+/// qubits.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_concurrence};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// 
+/// pub const THETA: f64 = PI*(30./180.);
+/// pub const PHI: f64 = PI*(45./180.);
+/// let bloch_state = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(PHI.cos()*THETA.sin(), PHI.sin())];
+/// let rho = create_density_matrix(&bloch_state);
+/// 
+/// let concurrence = find_concurrence(&rho);
+/// ```
 
 pub fn find_concurrence(rho: &MatrixC64) -> f64 {
 
@@ -78,6 +150,24 @@ pub fn find_concurrence(rho: &MatrixC64) -> f64 {
   0_f64.max(eigvals[dim as usize - 1] - eigval_sum)
 }
 
+/// Computes the trace norm of a density matrix.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_trace_norm};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// 
+/// pub const THETA: f64 = PI*(120./180.);
+/// let qm_state = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(THETA.sin(), 0.0)];
+/// let rho = create_density_matrix(&qm_state);
+/// 
+/// let trace_norm = find_trace_norm(&rho);
+/// ```
+
 pub fn find_trace_norm(rho: &MatrixC64) -> f64 {
 
   let rho_star   = rho.mapv(|rho| rho.conj());
@@ -89,6 +179,23 @@ pub fn find_trace_norm(rho: &MatrixC64) -> f64 {
   trace_norm.re
 }
 
+/// Computes the negativity of a density matrix.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_negativity};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let bell_state_psi_plus = array![ c64::new(0.0 , 0.0) , c64::new(NORM_CONST , 0.0) , c64::new(NORM_CONST , 0.0) , c64::new(0.0 , 0.0) ];
+/// let rho = create_density_matrix(&bell_state_psi_plus);
+/// 
+/// let negativity = find_negativity(&rho);
+/// ```
+
 pub fn find_negativity(rho: &MatrixC64) -> f64 {
 
   let rho_partial_transpose = find_partial_transpose(&rho);
@@ -96,10 +203,64 @@ pub fn find_negativity(rho: &MatrixC64) -> f64 {
   (trace_norm - 1.)/2.
 }
 
+/// Computes the log negativity of a density matrix.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_log_negativity};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// 
+/// pub const THETA: f64 = PI*(30./180.);
+/// pub const PHI: f64 = PI*(45./180.);
+/// let bloch_state = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(PHI.cos()*THETA.sin(), PHI.sin())];
+/// let rho_1 = create_density_matrix(&bloch_state);
+/// 
+/// let diag: VecC64 = Array::from_elem( 4, c64::new(1./4., 0.0) );
+/// let rho_2: MatrixC64 = MatrixC64::from_diag(&diag);
+/// 
+/// let rho_mixed = c64::new(0.3, 0.0)*rho_1 + c64::new(0.7, 0.0)*rho_2;
+/// let log_negativity = find_log_negativity(&rho_mixed);
+/// ```
+
 pub fn find_log_negativity(rho: &MatrixC64) -> f64 {
   let neg = find_negativity(&rho);
   (2.*neg + 1.).log2()
 }
+
+/// Computes the Schmidt number, or rank *k*, from a joint spectral intensity matrix (JSI).
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::find_schmidt_number;
+/// use qm::{MatrixF64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// extern crate csv;
+/// extern crate ndarray;
+/// extern crate ndarray_csv;
+/// use csv::{ReaderBuilder};
+/// use ndarray_csv::{Array2Reader};
+/// use std::error::Error;
+/// use std::fs::File;
+///
+/// pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, Box<dyn Error>> {
+///   let file = File::open(csv_file)?;
+///   let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+///   let array_read: MatrixF64 = reader.deserialize_array2((array_size, array_size))?;
+///   println!("{}",array_read);
+///   Ok(array_read)
+///   }
+///
+/// let jsi = read_f64_array("JSI_data200.csv".to_string(),200).unwrap();
+/// println!("{}",find_schmidt_number(&jsi));
+///
+/// ```
 
 pub fn find_schmidt_number(jsi: &MatrixF64) -> f64 {
 
@@ -112,6 +273,73 @@ pub fn find_schmidt_number(jsi: &MatrixF64) -> f64 {
   let k = 1./sum_eig_sqrd;
   k
 }
+
+/// Used to graph the two-source Hong-Ou-Mandel effect.
+/// 
+/// Computes a coincidence probability for a certain time interval dt. The
+/// plotters crate can be used in order to graph the data points.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// extern crate plotters;
+/// extern crate ndarray;
+
+/// pub use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// use plotters::prelude::*;
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::*;
+/// use qm::*;
+/// 
+/// extern crate csv;
+/// extern crate ndarray_csv;
+/// use csv::{ReaderBuilder};
+/// use ndarray_csv::{Array2Reader};
+/// use std::error::Error;
+/// use std::fs::File;
+///
+/// pub fn read_c64_array(csv_file: String, array_size: usize) -> Result<MatrixC64, Box<dyn Error>> {
+///     let file = File::open(csv_file)?;
+///     let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+///     let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
+///     Ok(array_read)
+/// }
+/// 
+/// pub fn read_f64_vector(csv_file: String) -> Result<VecF64, Box<dyn Error>> {
+/// 
+///     let file = File::open(csv_file)?;
+///     let mut reader = ReaderBuilder::new()
+///         .from_reader(file);
+/// 
+///     let v : Vec<f64> = reader.headers()?
+///         .into_iter()
+///         .map(|s| s.parse::<f64>().unwrap()) // to f64
+///         .collect(); // create a vec      
+///     
+///     let arr = Array::from(v);
+///     Ok(arr)
+/// }
+///
+/// let signal: VecF64 = read_f64_vector("signal_data5.csv".to_string()).unwrap();
+/// let idler: VecF64 = read_f64_vector("idler_data5.csv".to_string()).unwrap();
+/// let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string() , 5).unwrap();
+/// let norm = two_source_hom_norm(&signal, &idler, &jsa);
+/// let times = Array::linspace(-300.0e-15_f64, 300.0e-15_f64, 100);
+///
+/// let mut points_time: Vec<f64> = Vec::new();
+/// let mut points_ss: Vec<f64> = Vec::new();
+/// let mut points_ii: Vec<f64> = Vec::new();
+/// 
+/// for i in 0..99{
+///     let rate = find_two_source_hom(&signal, &idler, &jsa, times[i]);
+///     let rate_ss = rate.0/norm;
+///     let rate_ii = rate.1/norm;
+///     points_time.push(times[i]*1.0e+15_f64);
+///     points_ss.push(rate_ss);
+///     points_ii.push(rate_ii);
+/// }
+/// ```
 
 pub fn find_two_source_hom(signal: &VecF64, idler: &VecF64, jsa: &MatrixC64, dt: f64) -> (f64, f64, f64) {
 
@@ -162,6 +390,57 @@ pub fn find_two_source_hom(signal: &VecF64, idler: &VecF64, jsa: &MatrixC64, dt:
 (rate_ss, rate_ii, rate_si)
 }
 
+/// Used to normalize the coincidence probabilities while using the 
+/// *find_two_source_hom* function.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// extern crate plotters;
+/// extern crate ndarray;
+
+/// pub use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// use plotters::prelude::*;
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::*;
+/// use qm::*;
+/// 
+/// extern crate csv;
+/// extern crate ndarray_csv;
+/// use csv::{ReaderBuilder};
+/// use ndarray_csv::{Array2Reader};
+/// use std::error::Error;
+/// use std::fs::File;
+///
+/// pub fn read_c64_array(csv_file: String, array_size: usize) -> Result<MatrixC64, Box<dyn Error>> {
+///     let file = File::open(csv_file)?;
+///     let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+///     let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
+///     Ok(array_read)
+/// }
+/// 
+/// pub fn read_f64_vector(csv_file: String) -> Result<VecF64, Box<dyn Error>> {
+/// 
+///     let file = File::open(csv_file)?;
+///     let mut reader = ReaderBuilder::new()
+///         .from_reader(file);
+/// 
+///     let v : Vec<f64> = reader.headers()?
+///         .into_iter()
+///         .map(|s| s.parse::<f64>().unwrap()) // to f64
+///         .collect(); // create a vec      
+///     
+///     let arr = Array::from(v);
+///     Ok(arr)
+/// }
+///
+/// let signal: VecF64 = read_f64_vector("signal_data5.csv".to_string()).unwrap();
+/// let idler: VecF64 = read_f64_vector("idler_data5.csv".to_string()).unwrap();
+/// let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string() , 5).unwrap();
+/// let norm = two_source_hom_norm(&signal, &idler, &jsa);
+/// ```
+
 pub fn two_source_hom_norm(signal: &VecF64, idler: &VecF64, jsa: &MatrixC64)-> f64 {
     let mut rate = 0.;
     for (j, _s_j) in signal.iter().enumerate() {
@@ -184,14 +463,53 @@ pub fn two_source_hom_norm(signal: &VecF64, idler: &VecF64, jsa: &MatrixC64)-> f
     rate
 }
 
-/////////////////////////////////////////////////////////////////////
-/////////////////////////Matrix Operations///////////////////////////
-/////////////////////////////////////////////////////////////////////
+/// Computes the dimension (length) of a square matrix.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_dim};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let bell_state_phi_plus = array![ c64::new(NORM_CONST , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(NORM_CONST , 0.0) ];
+/// let rho = create_density_matrix(&bell_state_phi_plus);
+///
+/// let dim = find_dim(&rho);
+/// ```
 
 pub fn find_dim(matrix: &MatrixC64)-> i32 {
   let shape = matrix.dim();
   shape.1 as i32
 }
+
+/// Computes the symmetric square root of a Hermitian matrix. 
+
+/// If there are numerical precision errors with computing negative eigenvalues while using LAPACK for
+/// semi-positive definite, diagonalizable matrices, *rescale_neg_eigvals* will be called.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_symmetric_square_root};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// use std::f64::consts::PI;
+/// 
+/// pub const THETA: f64 = PI*(30./180.);
+/// pub const PHI: f64 = PI*(45./180.);
+/// let bloch_state = array![c64::new(THETA.cos(), 0.0), c64::new(0.0, 0.0), c64::new(0.0, 0.0), c64::new(PHI.cos()*THETA.sin(), PHI.sin())];
+/// let rho_1 = create_density_matrix(&bloch_state);
+/// 
+/// let diag: VecC64 = Array::from_elem( 4, c64::new(1./4., 0.0) );
+/// let rho_2: MatrixC64 = MatrixC64::from_diag(&diag);
+/// 
+/// let rho_mixed = c64::new(0.5, 0.0)*rho_1 + c64::new(0.5, 0.0)*rho_2;
+/// let sqrt_rho_mixed = find_symmetric_square_root(&rho_mixed);
+/// ```
 
 pub fn find_symmetric_square_root(matrix: &MatrixC64) -> MatrixC64 {
   
@@ -201,6 +519,27 @@ pub fn find_symmetric_square_root(matrix: &MatrixC64) -> MatrixC64 {
   let sqrt_product = matrix_s.dot(&sqrt_matrix_d).dot(&matrix_s_inv);
   sqrt_product
 }
+
+/// Rescales negative eigenvalues of a semi-positive definite, diagonal matrix to zero. The numerical 
+/// precision of the negative eigenvalues are extremely small, on the order of 10^-16.
+///
+/// Sometimes, there are numerical precision errors with computing negative eigenvalues when calling
+/// LAPACK, and the *rescale_neg_eigvals* function will rescale any negative eigenvalues to zero and 
+/// will return a diagonal matrix D and invertible matrix S.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, rescale_neg_eigvals};
+/// use qm::{VecC64 , MatrixC64};
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let bell_state_phi_plus = array![ c64::new(NORM_CONST , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(NORM_CONST , 0.0) ];
+/// let rho = create_density_matrix(&bell_state_phi_plus);
+///
+/// let (matrix_s, matrix_d) = rescale_neg_eigvals(&rho);
 
 pub fn rescale_neg_eigvals(rho: &MatrixC64) -> (MatrixC64, MatrixC64) {
   
@@ -226,6 +565,26 @@ pub fn rescale_neg_eigvals(rho: &MatrixC64) -> (MatrixC64, MatrixC64) {
   (matrix_d, matrix_s)
 }
 
+/// Computes the partial transpose of a matrix with even-numbered dimensions.
+/// 
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_partial_transpose};
+/// use qm::MatrixC64;
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+/// 
+/// let matrix: MatrixC64 = array![ 
+///   [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+///   [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(7.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
+///   [c64::new(9.0 , 0.0)  , c64::new(10.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
+///   [c64::new(13.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] 
+/// ];
+///
+/// let part_transposed_matrix = find_partial_transpose(&matrix);
+/// ```
+
 pub fn find_partial_transpose(matrix: &MatrixC64) -> MatrixC64 {
 
   let dim = find_dim(&matrix) as usize;
@@ -245,6 +604,30 @@ pub fn find_partial_transpose(matrix: &MatrixC64) -> MatrixC64 {
   partial_transpose_matrix
 
 }
+
+/// Computes the tensor product of a matrix.
+/// 
+/// In this example, an iterator is used to find the Hadamard tensor product for 
+/// an 8 qubit system. 
+///
+/// # Examples
+///
+/// ```rust,editable
+/// use qm::{create_density_matrix, find_tensor_product};
+/// use qm::MatrixC64;
+/// use ndarray::prelude::*;
+/// use ndarray_linalg::c64;
+///
+/// pub const NORM_CONST: f64 = 1./std::f64::consts::SQRT_2;
+/// let hadamard_2_qbit: MatrixC64 = array![ 
+///   [c64::new(NORM_CONST , 0.0)  , c64::new(NORM_CONST , 0.0) ] ,
+///   [c64::new(NORM_CONST , 0.0)  , c64::new(-NORM_CONST , 0.0) ] , 
+/// ];
+///
+/// let hadamard_8_qbit = (1..8).fold(hadamard_2_qbit.clone(), |prev, _i|{
+///                              find_tensor_product(&prev, &hadamard_2_qbit)
+///                        });
+/// ```
 
 pub fn find_tensor_product(matrix_a: &MatrixC64, matrix_b: &MatrixC64) -> MatrixC64 {
 
@@ -289,6 +672,9 @@ mod tests {
   use std::error::Error;
   use std::fs::File;
 
+  extern crate lazy_static;
+  use lazy_static::lazy_static;
+
   extern crate approx;
   use approx::*;
 
@@ -319,63 +705,68 @@ mod tests {
 
   pub fn read_f64_array(csv_file: String, array_size: usize) -> Result<MatrixF64, Box<dyn Error>> {
 
-      let file = File::open(csv_file)?;
-      let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
-      let array_read: MatrixF64 = reader.deserialize_array2((array_size, array_size))?;
-      println!("{}",array_read);
-      Ok(array_read)
+    let file = File::open(csv_file)?;
+    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+    let array_read: MatrixF64 = reader.deserialize_array2((array_size, array_size))?;
+    println!("{}",array_read);
+    Ok(array_read)
   }
 
   pub fn read_c64_array(csv_file: String, array_size: usize) -> Result<MatrixC64, Box<dyn Error>> {
 
-      let file = File::open(csv_file)?;
-      let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
-      let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
-      Ok(array_read)
+    let file = File::open(csv_file)?;
+    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
+    let array_read: MatrixC64 = reader.deserialize_array2((array_size, array_size))?;
+    Ok(array_read)
   }
 
-  pub fn read_f64_vector(csv_file: String) -> Result<VecF64, Box<dyn Error>> {
+  // pub fn read_f64_vector(csv_file: String) -> Result<VecF64, Box<dyn Error>> {
 
-      let file = File::open(csv_file)?;
-      let mut reader = ReaderBuilder::new()
-          .from_reader(file);
+  //   let file = File::open(csv_file)?;
+  //   let mut reader = ReaderBuilder::new()
+  //       .from_reader(file);
 
-      let v : Vec<f64> = reader.headers()?
-          .into_iter()
-          .map(|s| s.parse::<f64>().unwrap()) // to f64
-          .collect(); // create a vec      
-      
-      let arr = Array::from(v);
-      Ok(arr)
+  //   let v : Vec<f64> = reader.headers()?
+  //       .into_iter()
+  //       .map(|s| s.parse::<f64>().unwrap()) // to f64
+  //       .collect(); // create a vec      
+    
+  //   let arr = Array::from(v);
+  //   Ok(arr)
+  // }
+
+  pub fn assert_matrix_approx_equal(matrix1: &MatrixC64, matrix2: &MatrixC64, error: f64) -> (){
+
+    let all_tests_good = matrix1.iter()
+                                .zip(matrix2)
+                                .map(|(el1, el2)|{
+                                  abs_diff_eq!(el1.re, el2.re, epsilon = error) && 
+                                  abs_diff_eq!(el1.im, el2.im, epsilon = error)
+                                })
+                                .all(|check| check);
+    assert!(all_tests_good)
   }
+
 
   #[test]
-      fn test_create_dens_matrix() {
+      fn test_create_density_matrix() {
 
-        let rho_bell_phi_plus = create_dens_matrix(&BELL_PHI_PLUS_VEC);
+        let rho_bell_phi_plus = create_density_matrix(&BELL_PHI_PLUS_VEC);
 
-        let mut rho_bell_phi_plus_actual = MatrixC64::from_elem( (4 , 4), c64::new(0.0 , 0.0));
-        rho_bell_phi_plus_actual[[ 0 , 0 ]] = c64::new(0.5 , 0.0);
-        rho_bell_phi_plus_actual[[ 0 , 3 ]] = c64::new(0.5 , 0.0);
-        rho_bell_phi_plus_actual[[ 3 , 0 ]] = c64::new(0.5 , 0.0);
-        rho_bell_phi_plus_actual[[ 3 , 3 ]] = c64::new(0.5 , 0.0);
+        let rho_bell_phi_plus_actual = array![ 
+          [c64::new(0.5 , 0.0) ,  c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0) ] ,
+          [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) ] ,
+          [c64::new(0.0 , 0.0) ,  c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) ] ,
+          [c64::new(0.5 , 0.0) ,  c64::new(0.0 , 0.0) , c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0) ] 
+        ];
 
-        for i in 0..4{
-          for j in 0..4{
-
-            let bool_1 = abs_diff_eq!(rho_bell_phi_plus[[i , j]].re, rho_bell_phi_plus_actual[[i , j]].re , epsilon = 1.0e-6_f64);
-            let bool_2 = abs_diff_eq!(rho_bell_phi_plus[[i , j]].im, rho_bell_phi_plus_actual[[i , j]].im, epsilon = 1.0e-6_f64);
-            assert!(bool_1);
-            assert!(bool_2);
-          }
-        }
-
+        assert_matrix_approx_equal(&rho_bell_phi_plus, &rho_bell_phi_plus_actual, 1.0e-06_f64)
       }
 
   #[test]
       fn test_find_purity() {
 
-        let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);
+        let rho_bell_phi_minus = create_density_matrix(&BELL_PHI_MINUS_VEC);
         let purity_1 = find_purity(rho_bell_phi_minus);
         let bool_1 = abs_diff_eq!(purity_1 , 1.0 , epsilon = 1.0e-6_f64);
 
@@ -391,15 +782,15 @@ mod tests {
   #[test]
       fn test_find_fidelity() {
 
-        let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);
-        let rho_bell_psi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);      
+        let rho_bell_psi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);
+        let rho_bell_psi_minus = create_density_matrix(&BELL_PSI_MINUS_VEC);      
         let rho_mixed_diag: VecC64 = Array::from_elem( 4, c64::new(1./4., 0.0) );
         let rho_mixed: MatrixC64 = MatrixC64::from_diag(&rho_mixed_diag);
 
-        let bool_1 = abs_diff_eq!(find_fidelity(rho_bell_psi_plus.clone(), rho_bell_psi_plus.clone()), 1.0, epsilon = 1.0e-6_f64);
-        let bool_2 = abs_diff_eq!(find_fidelity(rho_bell_psi_plus.clone(), rho_mixed.clone()), 0.5, epsilon = 1.0e-6_f64);
-        let bool_3 = abs_diff_eq!(find_fidelity(rho_mixed.clone(), rho_mixed.clone()), 1.0, epsilon = 1.0e-6_f64);
-        let bool_4 = abs_diff_eq!(find_fidelity(rho_bell_psi_plus.clone(), rho_bell_psi_minus), 0.0, epsilon = 1.0e-6_f64);
+        let bool_1 = abs_diff_eq!(find_fidelity(&rho_bell_psi_plus, &rho_bell_psi_plus), 1.0, epsilon = 1.0e-6_f64);
+        let bool_2 = abs_diff_eq!(find_fidelity(&rho_bell_psi_plus, &rho_mixed), 0.5, epsilon = 1.0e-6_f64);
+        let bool_3 = abs_diff_eq!(find_fidelity(&rho_mixed, &rho_mixed), 1.0, epsilon = 1.0e-6_f64);
+        let bool_4 = abs_diff_eq!(find_fidelity(&rho_bell_psi_plus, &rho_bell_psi_minus), 0.0, epsilon = 1.0e-6_f64);
 
         assert!(bool_1);
         assert!(bool_2);
@@ -410,14 +801,14 @@ mod tests {
   #[test]
       fn test_find_concurrence() {
 
-        let rho_bell_phi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);    
+        let rho_bell_phi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);    
         let bool_1 = abs_diff_eq!(find_concurrence(&rho_bell_phi_plus), 1.0, epsilon = 1.0e-6_f64);
 
         let rho_mixed_diag: VecC64 = Array::from_elem( 64, c64::new(1./64., 0.0) );
         let rho_mixed: MatrixC64 = MatrixC64::from_diag(&rho_mixed_diag);     
         let bool_2 = abs_diff_eq!(find_concurrence(&rho_mixed), 0.0, epsilon = 1.0e-6_f64);       
 
-        let rho_part_entangled = create_dens_matrix(&PSI_PART_ENTANGLED);
+        let rho_part_entangled = create_density_matrix(&PSI_PART_ENTANGLED);
         let bool_3 = abs_diff_eq!(find_concurrence(&rho_part_entangled), 3_f64.sqrt()/2., epsilon = 1.0e-6_f64); 
 
         assert!(bool_1);
@@ -428,7 +819,7 @@ mod tests {
   #[test]
       fn test_find_trace_norm () {
 
-        let rho_bell_phi_minus = create_dens_matrix(&BELL_PSI_MINUS_VEC);   
+        let rho_bell_phi_minus = create_density_matrix(&BELL_PSI_MINUS_VEC);   
         let bool_1 = abs_diff_eq!(find_trace_norm(&rho_bell_phi_minus), 1.0, epsilon = 1.0e-6_f64);      
         assert!(bool_1);
 
@@ -441,7 +832,7 @@ mod tests {
   #[test]    
       fn test_find_negativity () {
 
-        let rho_bell_phi_minus = create_dens_matrix(&BELL_PHI_MINUS_VEC);   
+        let rho_bell_phi_minus = create_density_matrix(&BELL_PHI_MINUS_VEC);   
         let bool_1 = abs_diff_eq!(find_negativity(&rho_bell_phi_minus), 0.5, epsilon = 1.0e-6_f64);      
         assert!(bool_1);
 
@@ -449,12 +840,12 @@ mod tests {
         let rho_mixed: MatrixC64 = MatrixC64::from_diag(&rho_mixed_diag);     
         let bool_2 = abs_diff_eq!(find_negativity(&rho_mixed), 0.0, epsilon = 1.0e-6_f64);
         assert!(bool_2); 
-
       }
+
   #[test]  
       fn test_find_log_negativity() {
 
-        let rho_bell_psi_plus = create_dens_matrix(&BELL_PSI_PLUS_VEC);   
+        let rho_bell_psi_plus = create_density_matrix(&BELL_PSI_PLUS_VEC);   
         let bool_1 = abs_diff_eq!(find_log_negativity(&rho_bell_psi_plus), 1.0, epsilon = 1.0e-6_f64);      
         assert!(bool_1);
 
@@ -473,16 +864,26 @@ mod tests {
       }
 
   #[test] 
+      fn test_two_source_hom_norm(){
+
+        let signal: VecF64 = array![1.4446824684143E-06,1.49734123420715E-06,1.54999999999999E-06,1.60265876579284E-06,1.65531753158569E-06];
+        let idler: VecF64 = array![1.45728222027807E-06,1.51093173528974E-06,1.56458125030141E-06,1.61823076531308E-06,1.67188028032476E-06];
+        let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string(),5).unwrap();
+
+        assert_eq!(two_source_hom_norm(&signal, &idler, &jsa), 6.413926880524795e+61_f64);   
+      }
+
+  #[test] 
       fn test_find_dim() {
         
-        let rho = create_dens_matrix(&TEST_VEC);
+        let rho = create_density_matrix(&TEST_VEC);
         assert_eq!(find_dim(&rho) , 3);
       }
 
   #[test] 
       fn test_symmetric_square_root() {
 
-        let rho_expected = create_dens_matrix(&TEST_VEC);
+        let rho_expected = create_density_matrix(&TEST_VEC);
         let sqrt_rho_expected = find_symmetric_square_root(&rho_expected);
 
         let sqrt_rho_actual = array![ 
@@ -491,79 +892,47 @@ mod tests {
           [c64::new(0.0 , 0.0) ,  c64::new(0.0 , -0.5) , c64::new(0.5 , 0.0) ],
         ];
 
-
-        for i in 0..2{
-          for j in 0..2{
-            let bool_1 = abs_diff_eq!(sqrt_rho_expected[[i , j]].re, sqrt_rho_actual[[i , j]].re , epsilon = 1.0e-6_f64);
-            let bool_2 = abs_diff_eq!(sqrt_rho_expected[[i , j]].im, sqrt_rho_actual[[i , j]].im,  epsilon = 1.0e-6_f64);
-            assert!(bool_1);
-            assert!(bool_2);
-          }
-        }
+        assert_matrix_approx_equal(&sqrt_rho_expected, &sqrt_rho_actual, 1.0e-06_f64)
       }
 
   #[test] 
-      fn test_find_partial_transpose () {
+  fn test_find_partial_transpose () {
 
-        let matrix: MatrixC64 = array![ 
-          [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
-          [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(7.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
-          [c64::new(9.0 , 0.0)  , c64::new(10.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
-          [c64::new(13.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] 
-        ];
-
-        let partial_transpose_expected = find_partial_transpose(&matrix);
-
-        let partial_transpose_actual = array![ 
-          [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(7.0 , 0.0) ] ,
-          [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(4.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
-          [c64::new(9.0 , 0.0)  , c64::new(13.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
-          [c64::new(10.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] 
-        ];
-
-        for i in 0..3{
-          for j in 0..3{
-            let bool_1 = abs_diff_eq!(partial_transpose_expected[[i , j]].re, partial_transpose_actual[[i , j]].re , epsilon = 1.0e-6_f64);
-            let bool_2 = abs_diff_eq!(partial_transpose_expected[[i , j]].im, partial_transpose_actual[[i , j]].im,  epsilon = 1.0e-6_f64);
-            assert!(bool_1);
-            assert!(bool_2);
-          }
-        }      
-      }
-  #[test] 
-      fn test_tensor_product(){
-
-        let n_qbit = 8;
-        let diag: VecC64 = Array::from_elem( 256, c64::new(1./256., 0.0) );
-        let rho_8qbit_mixed_actual: MatrixC64 = MatrixC64::from_diag(&diag); 
-
-        let rho_2qbit_mixed = array![ 
-          [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)] ,
-          [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0) ] 
+    let matrix: MatrixC64 = array![ 
+      [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(4.0 , 0.0) ] ,
+      [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(7.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
+      [c64::new(9.0 , 0.0)  , c64::new(10.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
+      [c64::new(13.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] 
     ];
-        let rho_8qbit_mixed_expected = (1..n_qbit).fold(rho_2qbit_mixed.clone(), |prev, _i|{
-                                          find_tensor_product(&prev, &rho_2qbit_mixed)
-                                        });
 
-        for i in 0..255{
-          for j in 0..255{
-            let bool_1 = abs_diff_eq!(rho_8qbit_mixed_actual[[i , j]].re, rho_8qbit_mixed_expected[[i , j]].re , epsilon = 1.0e-6_f64);
-            let bool_2 = abs_diff_eq!(rho_8qbit_mixed_actual[[i , j]].im, rho_8qbit_mixed_expected[[i , j]].im,  epsilon = 1.0e-6_f64);
-            assert!(bool_1);
-            assert!(bool_2);
-          }
-        }      
+    let partial_transpose_expected = find_partial_transpose(&matrix);
+
+    let partial_transpose_actual = array![ 
+      [c64::new(1.0 , 0.0)  , c64::new(2.0 , 0.0)  , c64::new(3.0 , 0.0)  , c64::new(7.0 , 0.0) ] ,
+      [c64::new(5.0 , 0.0)  , c64::new(6.0 , 0.0)  , c64::new(4.0 , 0.0)  , c64::new(8.0 , 0.0) ] ,
+      [c64::new(9.0 , 0.0)  , c64::new(13.0 , 0.0) , c64::new(11.0 , 0.0) , c64::new(12.0 , 0.0)] ,
+      [c64::new(10.0 , 0.0) , c64::new(14.0 , 0.0) , c64::new(15.0 , 0.0) , c64::new(16.0 , 0.0)] 
+    ];
+
+    assert_matrix_approx_equal(&partial_transpose_expected, &partial_transpose_actual, 1.0e-06_f64)    
   }
 
   #[test] 
-      fn test_two_source_hom_norm(){
+  fn test_tensor_product(){
 
-        let signal: VecF64 = array![1.4446824684143E-06,1.49734123420715E-06,1.54999999999999E-06,1.60265876579284E-06,1.65531753158569E-06];
-        let idler: VecF64 = array![1.45728222027807E-06,1.51093173528974E-06,1.56458125030141E-06,1.61823076531308E-06,1.67188028032476E-06];
-        let jsa: MatrixC64 = read_c64_array("jsa_data5.csv".to_string(),5).unwrap();
+    let n_qbit = 8;
+    let diag: VecC64 = Array::from_elem( 256, c64::new(1./256., 0.0) );
+    let rho_8qbit_mixed_actual: MatrixC64 = MatrixC64::from_diag(&diag); 
 
-        assert_eq!(two_source_hom_norm(&signal, &idler, &jsa), 6.413926880524795e+61_f64);   
+    let rho_2qbit_mixed = array![ 
+      [c64::new(0.5 , 0.0) , c64::new(0.0 , 0.0)],
+      [c64::new(0.0 , 0.0) , c64::new(0.5 , 0.0)] 
+    ];
 
+    let rho_8qbit_mixed_expected = (1..n_qbit).fold(rho_2qbit_mixed.clone(), |prev, _i|{
+                                      find_tensor_product(&prev, &rho_2qbit_mixed)
+                                        });
+    assert_matrix_approx_equal(&rho_8qbit_mixed_expected, &rho_8qbit_mixed_actual, 1.0e-06_f64)                                              
   }
 
 }
